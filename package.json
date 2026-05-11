@@ -1,0 +1,25 @@
+{
+  "name": "myrepo",
+  "version": "1.0.0",
+  "description": "my repo for repo.lai.codes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tototofu123/myrepo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tototofu123/myrepo/issues"
+  },
+  "homepage": "https://github.com/tototofu123/myrepo#readme",
+  "dependencies": {
+    "marked": "^18.0.3",
+    "sanitize-html": "^2.17.3"
+  }
+}

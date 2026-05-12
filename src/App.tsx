@@ -9,8 +9,8 @@ interface Repository {
   description: string;
   html_url: string;
   stargazers_count: number;
-  language: string;
-  homepage: string;
+  language: string | null;
+  homepage: string | null;
   topics: string[];
   owner: { login: string };
   default_branch: string;
@@ -22,10 +22,17 @@ interface RepoDetails {
   tree: Array<{ path: string; type: string }>;
 }
 
-function RepoCard({ repo }: { repo: Repository }) {
+function RepoCard({ 
+  repo, 
+  isExpanded, 
+  onToggle 
+}: { 
+  repo: Repository; 
+  isExpanded: boolean; 
+  onToggle: () => void;
+}) {
   const [details, setDetails] = useState<RepoDetails | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
 
   const fetchDetails = async () => {
     if (details || loading) return;
@@ -42,12 +49,18 @@ function RepoCard({ repo }: { repo: Repository }) {
       let readme = 'No README found.';
       if (readmeRes.ok) {
         const readmeData = await readmeRes.json();
-        const decoded = atob(readmeData.content);
+        // Use TextDecoder to handle UTF-8 correctly
+        const binaryString = atob(readmeData.content);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const decoded = new TextDecoder('utf-8').decode(bytes);
         readme = sanitizeHtml(await marked(decoded));
       }
 
       const treeData = treeRes.ok ? await treeRes.json() : { tree: [] };
-      const tree = treeData.tree.slice(0, 15); // Show first 15 files
+      const tree = treeData.tree.slice(0, 15);
 
       setDetails({ languages, readme, tree });
     } catch (err) {
@@ -57,19 +70,33 @@ function RepoCard({ repo }: { repo: Repository }) {
     }
   };
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!expanded) fetchDetails();
-    setExpanded(!expanded);
+  const handleCardClick = () => {
+    if (!isExpanded) fetchDetails();
+    onToggle();
   };
 
+  // Determine display language if null
+  const displayLanguage = repo.language || (details?.tree.some(f => f.path.endsWith('.md')) ? 'Markdown' : (details?.tree.some(f => f.path.endsWith('.txt')) ? 'Text' : 'Other'));
+
+  const totalLangSize = details ? Object.values(details.languages).reduce((a, b) => a + b, 0) : 0;
+
   return (
-    <div className={`repo-card ${expanded ? 'expanded' : ''}`} onClick={handleToggle}>
+    <div className={`repo-card ${isExpanded ? 'expanded' : ''}`} onClick={handleCardClick}>
       <div className="card-main">
         <div className="card-top">
           <h3>{repo.name}</h3>
-          {repo.homepage && <span className="website-link">🔗 {repo.homepage.replace(/^https?:\/\//, '')}</span>}
         </div>
+        {repo.homepage && (
+          <div className="website-row">
+            <a href={repo.homepage.startsWith('http') ? repo.homepage : `https://${repo.homepage}`} 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="website-link"
+               onClick={e => e.stopPropagation()}>
+              🔗 {repo.homepage.replace(/^https?:\/\//, '')}
+            </a>
+          </div>
+        )}
         <p className="description">{repo.description || 'No description provided.'}</p>
         
         <div className="topics">
@@ -79,12 +106,11 @@ function RepoCard({ repo }: { repo: Repository }) {
         </div>
 
         <div className="card-footer">
-          <span className="language">{repo.language}</span>
-          <span className="stars">⭐ {repo.stargazers_count}</span>
+          <span className="language">{displayLanguage}</span>
         </div>
       </div>
 
-      {expanded && (
+      {isExpanded && (
         <div className="card-details" onClick={e => e.stopPropagation()}>
           {loading ? (
             <div className="detail-loader">Polishing the grain...</div>
@@ -92,13 +118,23 @@ function RepoCard({ repo }: { repo: Repository }) {
             <>
               <div className="detail-section">
                 <h4>Language Composition</h4>
+                <div className="lang-stats">
+                  {details && Object.entries(details.languages).map(([lang, val]) => {
+                    const percentage = Math.round((val / totalLangSize) * 100);
+                    return (
+                      <div key={lang} className="lang-item">
+                        <span className="lang-name">{lang}</span>
+                        <span className="lang-pct">{percentage}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
                 <div className="lang-bar">
                   {details && Object.entries(details.languages).map(([lang, val]) => (
                     <div 
                       key={lang} 
                       className="lang-segment" 
-                      style={{ width: `${(val / Object.values(details.languages).reduce((a, b) => a + b, 0)) * 100}%` }}
-                      title={`${lang}: ${Math.round((val / Object.values(details.languages).reduce((a, b) => a + b, 0)) * 100)}%`}
+                      style={{ width: `${(val / totalLangSize) * 100}%` }}
                     />
                   ))}
                 </div>
@@ -135,6 +171,7 @@ function App() {
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchRepos = async () => {
@@ -165,7 +202,12 @@ function App() {
 
       <div className="repo-grid">
         {repos.map(repo => (
-          <RepoCard key={repo.id} repo={repo} />
+          <RepoCard 
+            key={repo.id} 
+            repo={repo} 
+            isExpanded={expandedId === repo.id}
+            onToggle={() => setExpandedId(expandedId === repo.id ? null : repo.id)}
+          />
         ))}
       </div>
 

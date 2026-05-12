@@ -53,6 +53,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  height: fit-content;
 }
 
 .card-main {
@@ -68,15 +69,27 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.website-row {
   margin-bottom: 1rem;
 }
 
 .website-link {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--color-orange);
   background: rgba(245, 124, 0, 0.1);
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
+  text-decoration: none;
+  border: 1px solid rgba(245, 124, 0, 0.2);
+  transition: all 0.2s;
+}
+
+.website-link:hover {
+  background: rgba(245, 124, 0, 0.2);
+  box-shadow: 0 0 10px var(--color-orange-glow);
 }
 
 .repo-card h3 {
@@ -123,7 +136,7 @@
 
 /* Details Section */
 .card-details {
-  padding: 2rem;
+  padding: 2.5rem;
   background: rgba(255, 255, 255, 0.02);
   border-top: 1px solid var(--color-wood-dark);
   animation: slideDown 0.4s ease-out;
@@ -135,15 +148,39 @@
 }
 
 .detail-section {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .detail-section h4 {
   color: var(--color-orange);
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.lang-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.lang-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lang-name {
+  font-size: 0.9rem;
+  color: var(--color-white);
+  font-weight: 600;
+}
+
+.lang-pct {
+  font-size: 0.8rem;
+  color: #888;
 }
 
 .lang-bar {
@@ -176,35 +213,57 @@
   padding: 2rem;
   border-radius: 8px;
   border: 1px solid #222;
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.7;
+  color: #ccc;
 }
 
-.readme-content h1, .readme-content h2 { color: var(--color-orange); margin-top: 1.5rem; }
-.readme-content code { background: #222; padding: 2px 5px; border-radius: 3px; }
+.readme-content h1, .readme-content h2, .readme-content h3 { 
+  color: var(--color-orange); 
+  margin-top: 2rem; 
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #222;
+  padding-bottom: 0.5rem;
+}
+
+.readme-content p { margin-bottom: 1rem; }
+.readme-content code { background: #222; padding: 2px 5px; border-radius: 3px; font-family: monospace; color: var(--color-orange); }
+.readme-content pre { background: #111; padding: 1rem; border-radius: 5px; overflow-x: auto; margin-bottom: 1rem; border: 1px solid #222; }
+.readme-content ul, .readme-content ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+.readme-content img { max-width: 100%; border-radius: 4px; }
 
 .github-button {
   display: inline-block;
   background: var(--color-orange);
   color: var(--color-black);
-  padding: 0.8rem 2rem;
+  padding: 1rem 2.5rem;
   border-radius: 6px;
   text-decoration: none;
   font-weight: 700;
   margin-top: 1rem;
-  transition: transform 0.2s;
+  transition: all 0.2s;
 }
 
 .github-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px var(--color-orange-glow);
+  transform: scale(1.02);
+  box-shadow: 0 0 25px var(--color-orange-glow);
 }
 
 .detail-loader {
   color: var(--color-orange);
   text-align: center;
-  padding: 2rem;
+  padding: 3rem;
   font-style: italic;
+  font-size: 1.1rem;
+}
+
+.loader {
+  text-align: center;
+  font-size: 1.8rem;
+  padding: 8rem;
+  color: var(--color-orange);
+  font-weight: 300;
+  letter-spacing: 2px;
 }

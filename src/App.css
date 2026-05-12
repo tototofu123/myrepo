@@ -6,9 +6,13 @@
 
 .header {
   text-align: center;
-  padding: 4rem 1rem;
+  padding: 6rem 1rem 4rem;
   border-bottom: 2px solid var(--color-wood-dark);
   background: linear-gradient(180deg, var(--color-black) 0%, rgba(18, 18, 18, 0) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header h1 {
@@ -32,6 +36,32 @@
   color: var(--color-white);
   text-decoration: none;
   border-bottom: 1px solid var(--color-orange);
+}
+
+.search-container {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1.2rem 2rem;
+  background: rgba(44, 27, 14, 0.2);
+  border: 1px solid var(--color-wood-dark);
+  border-radius: 50px;
+  color: var(--color-white);
+  font-size: 1.1rem;
+  outline: none;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.search-input:focus {
+  border-color: var(--color-orange);
+  box-shadow: 0 0 20px var(--color-orange-glow);
+  background: rgba(44, 27, 14, 0.4);
 }
 
 .repo-grid {
@@ -63,6 +93,41 @@
 .repo-card.expanded {
   grid-column: 1 / -1;
   cursor: default;
+  z-index: 10;
+}
+
+.no-results {
+  text-align: center;
+  padding: 5rem;
+  color: #555;
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+.scroll-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--color-orange);
+  color: var(--color-black);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: transform 0.2s;
+}
+
+.scroll-top:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px var(--color-orange-glow);
 }
 
 .card-top {

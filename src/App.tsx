@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
 interface Repository {
@@ -81,7 +82,13 @@ function RepoCard({
   const totalLangSize = details ? Object.values(details.languages).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <div className={`repo-card ${isExpanded ? 'expanded' : ''}`} onClick={handleCardClick}>
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`repo-card ${isExpanded ? 'expanded' : ''}`} 
+      onClick={handleCardClick}
+    >
       <div className="card-main">
         <div className="card-top">
           <h3>{repo.name}</h3>
@@ -110,60 +117,69 @@ function RepoCard({
         </div>
       </div>
 
-      {isExpanded && (
-        <div className="card-details" onClick={e => e.stopPropagation()}>
-          {loading ? (
-            <div className="detail-loader">Polishing the grain...</div>
-          ) : (
-            <>
-              <div className="detail-section">
-                <h4>Language Composition</h4>
-                <div className="lang-stats">
-                  {details && Object.entries(details.languages).map(([lang, val]) => {
-                    const percentage = Math.round((val / totalLangSize) * 100);
-                    return (
-                      <div key={lang} className="lang-item">
-                        <span className="lang-name">{lang}</span>
-                        <span className="lang-pct">{percentage}%</span>
-                      </div>
-                    );
-                  })}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="card-details" 
+            onClick={e => e.stopPropagation()}
+          >
+            {loading ? (
+              <div className="detail-loader">Polishing the grain...</div>
+            ) : (
+              <>
+                <div className="detail-section">
+                  <h4>Language Composition</h4>
+                  <div className="lang-stats">
+                    {details && Object.entries(details.languages).map(([lang, val]) => {
+                      const percentage = Math.round((val / totalLangSize) * 100);
+                      return (
+                        <div key={lang} className="lang-item">
+                          <span className="lang-name">{lang}</span>
+                          <span className="lang-pct">{percentage}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="lang-bar">
+                    {details && Object.entries(details.languages).map(([lang, val]) => (
+                      <div 
+                        key={lang} 
+                        className="lang-segment" 
+                        style={{ width: `${(val / totalLangSize) * 100}%` }}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="lang-bar">
-                  {details && Object.entries(details.languages).map(([lang, val]) => (
-                    <div 
-                      key={lang} 
-                      className="lang-segment" 
-                      style={{ width: `${(val / totalLangSize) * 100}%` }}
-                    />
-                  ))}
+
+                <div className="detail-section">
+                  <h4>File Structure (Partial)</h4>
+                  <ul className="tree-list">
+                    {details?.tree.map(node => (
+                      <li key={node.path} className={node.type === 'tree' ? 'folder' : 'file'}>
+                        {node.type === 'tree' ? '📁' : '📄'} {node.path}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
 
-              <div className="detail-section">
-                <h4>File Structure (Partial)</h4>
-                <ul className="tree-list">
-                  {details?.tree.map(node => (
-                    <li key={node.path} className={node.type === 'tree' ? 'folder' : 'file'}>
-                      {node.type === 'tree' ? '📁' : '📄'} {node.path}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                <div className="detail-section readme-section">
+                  <h4>README</h4>
+                  <div className="readme-content" dangerouslySetInnerHTML={{ __html: details?.readme || '' }} />
+                </div>
 
-              <div className="detail-section readme-section">
-                <h4>README</h4>
-                <div className="readme-content" dangerouslySetInnerHTML={{ __html: details?.readme || '' }} />
-              </div>
-
-              <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="github-button">
-                View on GitHub
-              </a>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+                <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="github-button">
+                  View on GitHub
+                </a>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -172,14 +188,29 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [showScroll, setShowScroll] = useState(false);
 
   useEffect(() => {
     const fetchRepos = async () => {
       try {
         const response = await fetch('https://api.github.com/users/tototofu123/repos?sort=updated&per_page=100');
         if (!response.ok) throw new Error('Failed to fetch repositories');
-        const data = await response.json();
-        setRepos(data);
+        const data: Repository[] = await response.json();
+        
+        // Filter out design.md repos and forks
+        const filteredData = data.filter(repo => 
+          !repo.name.toLowerCase().includes('design.md') && 
+          !repo.name.toLowerCase().includes('design-md')
+        ).map(repo => {
+          // Specific fix for hkbus
+          if (repo.name === 'hk-bus-fetch' || repo.name === 'hkbus') {
+            return { ...repo, homepage: 'https://tototofu123.github.io/hk-bus-fetch/' };
+          }
+          return repo;
+        });
+
+        setRepos(filteredData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
@@ -187,21 +218,59 @@ function App() {
       }
     };
 
+    const checkScroll = () => {
+      if (!showScroll && window.pageYOffset > 400) {
+        setShowScroll(true);
+      } else if (showScroll && window.pageYOffset <= 400) {
+        setShowScroll(false);
+      }
+    };
+
+    window.addEventListener('scroll', checkScroll);
     fetchRepos();
-  }, []);
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, [showScroll]);
+
+  const filteredRepos = useMemo(() => {
+    return repos.filter(repo => 
+      repo.name.toLowerCase().includes(search.toLowerCase()) ||
+      (repo.language && repo.language.toLowerCase().includes(search.toLowerCase())) ||
+      (repo.description && repo.description.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [repos, search]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="app-container">
       <header className="header">
-        <h1>repo.<span className="accent">lai.codes</span></h1>
+        <motion.h1 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          repo.<span className="accent">lai.codes</span>
+        </motion.h1>
         <p className="subtitle">Interactive Showcase for <a href="https://github.com/tototofu123" target="_blank" rel="noopener noreferrer">@tototofu123</a></p>
+        
+        <div className="search-container">
+          <input 
+            type="text" 
+            placeholder="Search projects by name, language, or description..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="search-input"
+          />
+        </div>
       </header>
 
       {loading && <div className="loader">Carving the inventory...</div>}
       {error && <div className="error">Error: {error}</div>}
 
-      <div className="repo-grid">
-        {repos.map(repo => (
+      <motion.div layout className="repo-grid">
+        {filteredRepos.map(repo => (
           <RepoCard 
             key={repo.id} 
             repo={repo} 
@@ -209,11 +278,31 @@ function App() {
             onToggle={() => setExpandedId(expandedId === repo.id ? null : repo.id)}
           />
         ))}
-      </div>
+      </motion.div>
+
+      {filteredRepos.length === 0 && !loading && (
+        <div className="no-results">
+          No matches found in the woodpile.
+        </div>
+      )}
 
       <footer className="footer">
-        <p>© {new Date().getFullYear()} repo.lai.codes | Built with React + GitHub API</p>
+        <p>© {new Date().getFullYear()} repo.lai.codes | Built with React + Framer Motion + GitHub API</p>
       </footer>
+
+      <AnimatePresence>
+        {showScroll && (
+          <motion.button 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={scrollToTop}
+            className="scroll-top"
+          >
+            ↑
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

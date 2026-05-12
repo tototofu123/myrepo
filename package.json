@@ -4,7 +4,9 @@
   "description": "my repo for repo.lai.codes",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -20,6 +22,15 @@
   "homepage": "https://github.com/tototofu123/myrepo#readme",
   "dependencies": {
     "marked": "^18.0.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "sanitize-html": "^2.17.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.12"
   }
 }

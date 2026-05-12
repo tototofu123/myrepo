@@ -1,0 +1,36 @@
+:root {
+  --color-wood-dark: #2C1B0E;
+  --color-wood-light: #5D4037;
+  --color-black: #121212;
+  --color-white: #F8F9FA;
+  --color-orange: #F57C00;
+  --color-orange-glow: rgba(245, 124, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-black);
+  background-image: 
+    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(44, 27, 14, 0.2) 2px,
+      rgba(44, 27, 14, 0.2) 4px
+    );
+  color: var(--color-white);
+  min-height: 100vh;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}

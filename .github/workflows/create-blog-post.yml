@@ -1,1 +1,70 @@
-bmFtZTogQ3JlYXRlIEJsb2cgUG9zdCBmcm9tIElzc3VlCgpvbjoKICBpc3N1ZXM6CiAgICB0eXBlczogW29wZW5lZCwgcmVvcGVuZWRdCgpwZXJtaXNzaW9uczoKICBjb250ZW50czogd3JpdGUKICBpc3N1ZXM6IHdyaXRlCgpqb2JzOgogIGJ1aWxkLWJsb2c6CiAgICAjIE9ubHkgcnVuIHdoZW4gdGhlIGlzc3VlIGhhcyB0aGUgJ2Jsb2cnIGxhYmVsIEFORCB0aXRsZSBzdGFydHMgd2l0aCAnW2Jsb2ddJwogICAgaWY6IHwKICAgICAgY29udGFpbnMoZ2l0aHViLmV2ZW50Lmlzc3VlLmxhYmVscy4qLm5hbWUsICdibG9nJykgJiYKICAgICAgc3RhcnRzV2l0aChnaXRodWIuZXZlbnQuaXNzdWUudGl0bGUsICdbYmxvZ10nKQogICAgcnVucy1vbjogdWJ1bnR1LWxhdGVzdAoKICAgIHN0ZXBzOgogICAgICAtIG5hbWU6IENoZWNrb3V0IHJlcG8KICAgICAgICB1c2VzOiBhY3Rpb25zL2NoZWNrb3V0QHY0CgogICAgICAtIG5hbWU6IFNldCB1cCBOb2RlCiAgICAgICAgdXNlczogYWN0aW9ucy9zZXR1cC1ub2RlQHY0CiAgICAgICAgd2l0aDoKICAgICAgICAgIG5vZGUtdmVyc2lvbjogJzIwJwogICAgICAgICAgY2FjaGU6ICducG0nCgogICAgICAtIG5hbWU6IEluc3RhbGwgZGVwZW5kZW5jaWVzCiAgICAgICAgcnVuOiBucG0gY2kKCiAgICAgIC0gbmFtZTogUGFyc2UgaXNzdWUgYm9keSBhbmQgZ2VuZXJhdGUgYmxvZyBwYWdlCiAgICAgICAgZW52OgogICAgICAgICAgSVNTVUVfQk9EWTogJHt7IGdpdGh1Yi5ldmVudC5pc3N1ZS5ib2R5IH19CiAgICAgICAgICBJU1NVRV9USVRMRTogJHt7IGdpdGh1Yi5ldmVudC5pc3N1ZS50aXRsZSB9fQogICAgICAgIHJ1bjogbm9kZSAuZ2l0aHViL3NjcmlwdHMvZ2VuZXJhdGUtYmxvZy5qcwoKICAgICAgIyBDb21taXQgdGhlIGdlbmVyYXRlZCBmaWxlcyB0byBtYWluIHNvIHRoYXQgZGVwbG95LnltbCBwaWNrcyB0aGVtIHVwCiAgICAgICMgYW5kIGJ1aWxkcyB0aGUgZnVsbCBWaXRlIHNpdGUgcHJvcGVybHkgKGZpeGVzIE1JTUUgdHlwZSBlcnJvcikKICAgICAgLSBuYW1lOiBDb21taXQgZ2VuZXJhdGVkIGJsb2cgZmlsZXMgdG8gbWFpbgogICAgICAgIHJ1bjogfAogICAgICAgICAgZ2l0IGNvbmZpZyB1c2VyLm5hbWUgImdpdGh1Yi1hY3Rpb25zW2JvdF0iCiAgICAgICAgICBnaXQgY29uZmlnIHVzZXIuZW1haWwgImdpdGh1Yi1hY3Rpb25zW2JvdF1AdXNlcnMubm9yZXBseS5naXRodWIuY29tIgogICAgICAgICAgZ2l0IGFkZCBwdWJsaWMvYmxvZ3MvCiAgICAgICAgICBnaXQgZGlmZiAtLXF1aWV0IC0tY2FjaGVkIHx8IGdpdCBjb21taXQgLW0gImJsb2c6IGFkZCBwb3N0IGZyb20gaXNzdWUgJHt7IGdpdGh1Yi5ldmVudC5pc3N1ZS5udW1iZXIgfX0iCiAgICAgICAgICBnaXQgcHVzaCBvcmlnaW4gbWFpbgoKICAgICAgLSBuYW1lOiBDb21tZW50IG9uIGlzc3VlIHdpdGggcmVzdWx0CiAgICAgICAgdXNlczogYWN0aW9ucy9naXRodWItc2NyaXB0QHY3CiAgICAgICAgd2l0aDoKICAgICAgICAgIHNjcmlwdDogfAogICAgICAgICAgICBjb25zdCBib2R5ID0gcHJvY2Vzcy5lbnYuSVNTVUVfQk9EWSB8fCAnJzsKICAgICAgICAgICAgY29uc3Qgc2x1Z01hdGNoID0gYm9keS5tYXRjaCgvXnNsdWc6XHMqIj8oW1x3LV0rKSI/L20pOwogICAgICAgICAgICBjb25zdCBzbHVnID0gc2x1Z01hdGNoID8gc2x1Z01hdGNoWzFdIDogJ3Vua25vd24nOwogICAgICAgICAgICBjb25zdCBjbmFtZSA9IHJlcXVpcmUoJ2ZzJykuZXhpc3RzU3luYygnQ05BTUUnKQogICAgICAgICAgICAgID8gcmVxdWlyZSgnZnMnKS5yZWFkRmlsZVN5bmMoJ0NOQU1FJywgJ3V0ZjgnKS50cmltKCkKICAgICAgICAgICAgICA6IGAke2NvbnRleHQucmVwby5vd25lcn0uZ2l0aHViLmlvLyR7Y29udGV4dC5yZXBvLnJlcG99YDsKICAgICAgICAgICAgY29uc3QgdXJsID0gYGh0dHBzOi8vJHtjbmFtZX0vYmxvZ3MvJHtzbHVnfS9gOwogICAgICAgICAgICBhd2FpdCBnaXRodWIucmVzdC5pc3N1ZXMuY3JlYXRlQ29tbWVudCh7CiAgICAgICAgICAgICAgb3duZXI6IGNvbnRleHQucmVwby5vd25lciwKICAgICAgICAgICAgICByZXBvOiBjb250ZXh0LnJlcG8ucmVwbywKICAgICAgICAgICAgICBpc3N1ZV9udW1iZXI6IGNvbnRleHQuaXNzdWUubnVtYmVyLAogICAgICAgICAgICAgIGJvZHk6IGB+IERlcGxveWluZyEgQmxvZyBwb3N0IHdpbGwgYmUgbGl2ZSBhdDpcblxuPiAke3VybH1cblxuVGhlIFZpdGUgYnVpbGQgaXMgcnVubmluZyBub3cgKHRyaWdnZXJlZCBieSB0aGUgY29tbWl0IHRvIG1haW4pLiBJdCBzaG91bGQgYmUgbGl2ZSBpbiB+MSBtaW51dGUuYCwKICAgICAgICAgICAgfSk7CiAgICAgICAgICAgIGF3YWl0IGdpdGh1Yi5yZXN0Lmlzc3Vlcy51cGRhdGUoewogICAgICAgICAgICAgIG93bmVyOiBjb250ZXh0LnJlcG8ub3duZXIsCiAgICAgICAgICAgICAgcmVwbzogY29udGV4dC5yZXBvLnJlcG8sCiAgICAgICAgICAgICAgaXNzdWVfbnVtYmVyOiBjb250ZXh0Lmlzc3VlLm51bWJlciwKICAgICAgICAgICAgICBzdGF0ZTogJ2Nsb3NlZCcsCiAgICAgICAgICAgIH0pOwogICAgICAgIGVudjoKICAgICAgICAgIElTU1VFX0JPRFk6ICR7eyBnaXRodWIuZXZlbnQuaXNzdWUuYm9keSB9fQo=
+name: Create Blog Post from Issue
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  build-blog:
+    # Only run when the issue has the 'blog' label AND title starts with '[blog]'
+    if: |
+      contains(github.event.issue.labels.*.name, 'blog') &&
+      startsWith(github.event.issue.title, '[blog]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Parse issue body and generate blog page
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: node .github/scripts/generate-blog.js
+
+      - name: Commit generated blog files to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/blogs/
+          git diff --quiet --cached || git commit -m "blog: add post from issue ${{ github.event.issue.number }}"
+          git push origin main
+
+      - name: Comment on issue with result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = process.env.ISSUE_BODY || '';
+            const slugMatch = body.match(/^slug:\s*"?([\w-]+)"?/m);
+            const slug = slugMatch ? slugMatch[1] : 'unknown';
+            const cname = require('fs').existsSync('CNAME')
+              ? require('fs').readFileSync('CNAME', 'utf8').trim()
+              : `${context.repo.owner}.github.io/${context.repo.repo}`;
+            const url = `https://${cname}/blogs/${slug}/`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `~ Deploying! Blog post will be live at:\n\n> ${url}\n\nThe Vite build is running now (triggered by the commit to main). It should be live in ~1 minute.`,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+            });
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}

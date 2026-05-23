@@ -1,171 +1,147 @@
 {
-  "_comment": "Conversion spec for generate-blog.js. Human-readable reference for how Markdown is converted to HTML and where files land.",
-  "version": "2.0",
-  "updated": "2026-05-23",
+  "_doc": "convert.json — myrepo Blog MD→HTML Conversion Spec v2",
+  "_description": "This file is the single source of truth for how Markdown written in a GitHub Issue is converted to a styled HTML blog post. generate-blog.js reads the Frontmatter and Content sections. blog-styles.css provides all visual styling. Update this file whenever the spec changes — the script and styles should stay in sync with it.",
+  "_workflow": "GitHub Issue body → generate-blog.js parses this spec → writes /blogs/<slug>/<slug>.html",
 
-  "fileStructure": {
-    "description": "Every blog post lives in its own subfolder under /blogs/",
-    "pattern": "/blogs/<slug>/<slug>.html",
-    "examples": [
-      "/blogs/how-myrepo-blog-pipeline-works/how-myrepo-blog-pipeline-works.html",
-      "/blogs/my-stm32-uart-journey/my-stm32-uart-journey.html"
-    ],
-    "assets": [
-      { "file": "public/blogs/blog-styles.css",  "role": "Canonical stylesheet, linked by every post as ../blog-styles.css" },
-      { "file": "public/blogs/convert.json",     "role": "This file — human-readable conversion spec" },
-      { "file": "public/blogs/index.html",       "role": "Auto-generated listing of all posts" }
-    ]
+  "outputStructure": {
+    "_comment": "Every blog post outputs THREE artefacts inside public/",
+    "postHtml":    "public/blogs/<slug>/<slug>.html  — the styled post page",
+    "listingHtml": "public/blogs/index.html          — auto-updated post index (appended to)",
+    "stylesheet":  "public/blogs/blog-styles.css     — shared CSS for all pages (NOT per-post)"
   },
 
   "frontmatter": {
-    "description": "YAML block between --- delimiters at the top of the GitHub issue body",
+    "_comment": "YAML block delimited by --- at the top of the issue body",
     "fields": {
-      "title":   { "type": "string",   "required": true,  "usage": "<title>, <h1 class=post-title>, og:title" },
-      "slug":    { "type": "string",   "required": true,  "usage": "folder name and HTML filename" },
-      "date":    { "type": "YYYY-MM-DD","required": true,  "usage": "<time datetime=> and card date" },
-      "summary": { "type": "string",   "required": false, "usage": "<p class=post-summary>, meta description, card summary" },
-      "tags":    { "type": "string[]|string", "required": false, "usage": "<span class=tag> badges in post header" }
+      "title":   { "type": "string",         "required": true,  "example": "My STM32 UART Journey" },
+      "slug":    { "type": "string",         "required": true,  "example": "my-stm32-uart-journey", "rules": "lowercase, hyphens only, no spaces" },
+      "date":    { "type": "YYYY-MM-DD",     "required": true,  "example": "2026-05-23" },
+      "summary": { "type": "string",         "required": false, "example": "A deep-dive into baud rate mismatches" },
+      "tags":    { "type": "array|string",   "required": false, "example": "[embedded, stm32, uart]" }
     },
-    "example": "---\ntitle: \"My Post\"\nslug: my-post\ndate: \"2026-05-23\"\nsummary: \"One-liner about the post.\"\ntags: [embedded, stm32]\n---"
+    "exampleBlock": "---\ntitle: \"My STM32 UART Journey\"\nslug: \"my-stm32-uart-journey\"\ndate: \"2026-05-23\"\nsummary: \"Debugging baud rate mismatches on the STM32F103.\"\ntags: [embedded, stm32, uart]\n---"
   },
 
   "markdownToHtml": {
-    "description": "Mapping of every Markdown construct to its output HTML element and CSS class",
-    "conversions": [
-      {
-        "markdown": "# Heading",
-        "html": "<h1>",
-        "note": "Inside .post-body only — not the post title (which comes from frontmatter)",
-        "css": ".post-body h1 — Instrument Serif, --text-xl, dark top margin"
-      },
-      {
-        "markdown": "## Heading",
-        "html": "<h2>",
-        "css": ".post-body h2 — Instrument Serif, --text-lg"
-      },
-      {
-        "markdown": "### Heading",
-        "html": "<h3>",
-        "css": ".post-body h3 — Work Sans semibold, --text-base"
-      },
-      {
-        "markdown": "#### / ##### / ######",
-        "html": "<h4> / <h5> / <h6>",
-        "css": ".post-body h4/h5/h6 — Work Sans, --text-sm, uppercase, tracked, muted color"
-      },
-      {
-        "markdown": "paragraph text",
-        "html": "<p>",
-        "css": ".post-body p — max-width 72ch, line-height 1.75, margin-bottom --space-6"
-      },
-      {
-        "markdown": "**bold**",
-        "html": "<strong>",
-        "css": ".post-body strong — font-weight 600"
-      },
-      {
-        "markdown": "*italic* or _italic_",
-        "html": "<em>",
-        "css": ".post-body em — font-style italic"
-      },
-      {
-        "markdown": "`inline code`",
-        "html": "<code>",
-        "css": ".post-body code — font-mono, 0.88em, surface-2 bg, border, radius-sm"
-      },
-      {
-        "markdown": "```lang\ncode block\n```",
-        "html": "<pre><code class=\"language-{lang}\">",
-        "css": ".post-body pre — dark bg #1c1b19, radius-lg, overflow-x auto, shadow-md"
-      },
-      {
-        "markdown": "> blockquote",
-        "html": "<blockquote>",
-        "css": ".post-body blockquote — teal left-border 3px, surface bg, italic, muted text"
-      },
-      {
-        "markdown": "- item or * item",
-        "html": "<ul><li>",
-        "css": ".post-body ul — list-style disc, left margin --space-6"
-      },
-      {
-        "markdown": "1. item",
-        "html": "<ol><li>",
-        "css": ".post-body ol — list-style decimal, left margin --space-6"
-      },
-      {
-        "markdown": "---",
-        "html": "<hr>",
-        "css": ".post-body hr — 1px divider color, no border"
-      },
-      {
-        "markdown": "| col | col |\n|---|---|\n| val | val |",
-        "html": "<table><thead><tr><th>...</th></tr></thead><tbody><tr><td>...</td></tr></tbody></table>",
-        "css": ".post-body table — tabular-nums, th uppercase tracked, tr hover surface"
-      },
-      {
-        "markdown": "![alt](url)\n*caption*",
-        "html": "<figure><img loading=lazy><figcaption>",
-        "css": ".post-body figure — center aligned; img radius-lg shadow-md; figcaption --text-xs faint"
-      },
-      {
-        "markdown": "![alt](url)",
-        "html": "<img loading=\"lazy\">",
-        "note": "Plain image without caption — no figure wrapper"
-      },
-      {
-        "markdown": "[text](url)",
-        "html": "<a target=_blank rel=noopener>",
-        "css": ".post-body a — primary color, underline, underline-offset 3px"
-      }
-    ]
-  },
+    "_comment": "Rules the generate-blog.js script follows when converting Markdown prose to HTML. Every output element uses a CSS class from blog-styles.css.",
+    "processingOrder": [
+      "1. Strip frontmatter block (everything before and including the second ---)",
+      "2. Fenced code blocks  (``` ... ```)  →  FIRST, before inline rules touch the content",
+      "3. ATX Headings  (# ## ### #### ##### ######)",
+      "4. Bold + italic  (*** ** *)",
+      "5. Inline code  (` ... `)",
+      "6. Images with caption  (![alt](src) + *caption* on next line)  →  <figure>",
+      "7. Plain images  ![alt](src)  →  <img>",
+      "8. Hyperlinks  [text](url)  →  <a>",
+      "9. Blockquotes  (> ...)",
+      "10. Horizontal rules  (---)",
+      "11. GFM tables  (| col | col |)",
+      "12. Unordered lists  (- / * / +)",
+      "13. Ordered lists  (1. 2. 3.)",
+      "14. Remaining lines with content  →  <p>"
+    ],
 
-  "specialElements": {
-    "aiImageCredit": {
-      "html": "<p class=\"img-credit\">",
-      "description": "Added manually by generate-blog.js when image URL contains AI-generated metadata",
-      "css": ".img-credit — font-size 0.6rem, color-text-faint, text-align center",
-      "format": "AI-generated · Prompt: \"<prompt text>\""
-    },
-    "tag": {
-      "html": "<span class=\"tag\">",
-      "description": "Rendered from frontmatter tags[] in the post header",
-      "css": ".tag — primary-highlight bg, primary color, uppercase, --text-xs, radius-full"
-    },
-    "revealAnimation": {
-      "description": "Classes applied to .post-header and .post-body for IntersectionObserver scroll reveal",
-      "classes": [".reveal", ".reveal.visible"],
-      "css": ".reveal — opacity 0, translateY 16px; .reveal.visible — opacity 1, translateY 0"
+    "elements": {
+      "headings": {
+        "h1": { "md": "# Text",   "html": "<h1>Text</h1>",   "cssClass": "post-body h1", "notes": "Only one H1 per post; use sparingly inside body" },
+        "h2": { "md": "## Text",  "html": "<h2>Text</h2>",   "cssClass": "post-body h2", "notes": "Main section divider" },
+        "h3": { "md": "### Text", "html": "<h3>Text</h3>",   "cssClass": "post-body h3", "notes": "Sub-section" },
+        "h4": { "md": "#### Text","html": "<h4>Text</h4>",   "cssClass": "post-body h4" },
+        "h5": { "md": "##### Text","html": "<h5>Text</h5>",   "cssClass": "post-body h5" },
+        "h6": { "md": "###### Text","html": "<h6>Text</h6>",  "cssClass": "post-body h6" }
+      },
+      "emphasis": {
+        "boldItalic": { "md": "***text***", "html": "<strong><em>text</em></strong>" },
+        "bold":       { "md": "**text**",   "html": "<strong>text</strong>" },
+        "italic":     { "md": "*text*",     "html": "<em>text</em>" }
+      },
+      "code": {
+        "inline":  { "md": "`code`",            "html": "<code>code</code>",               "cssClass": "post-body code" },
+        "fenced":  { "md": "```lang\ncode\n```", "html": "<pre><code class=\"language-lang\">code</code></pre>", "cssClass": "post-body pre", "notes": "lang attribute preserved for future syntax highlighter" }
+      },
+      "links":        { "md": "[label](url)",        "html": "<a href=\"url\" target=\"_blank\" rel=\"noopener\">label</a>", "notes": "All links open in new tab" },
+      "images": {
+        "plain":        { "md": "![alt](src)",           "html": "<img src=\"src\" alt=\"alt\" loading=\"lazy\">",                      "cssClass": "post-body img" },
+        "withCaption":  { "md": "![alt](src)\n*caption*", "html": "<figure><img src=\"src\" alt=\"alt\" loading=\"lazy\"><figcaption>caption</figcaption></figure>", "cssClass": "post-body figure" },
+        "aiGenerated": {
+          "_note": "When the image is AI-generated, add a .img-credit paragraph immediately after the <img> or inside <figure> after <figcaption>",
+          "html": "<figure><img src=\"url\" alt=\"alt\" loading=\"lazy\"><figcaption>caption</figcaption></figure>\n<p class=\"img-credit\">AI-generated &middot; Prompt: \"your prompt here\"</p>",
+          "cssStyle": "font-size: 0.6rem; color: var(--color-text-faint); text-align: center; font-style: italic;"
+        }
+      },
+      "blockquote":   { "md": "> text",               "html": "<blockquote><p>text</p></blockquote>",                               "cssClass": "post-body blockquote" },
+      "hr":           { "md": "---",                   "html": "<hr>",                                                               "cssClass": "post-body hr" },
+      "unorderedList":{ "md": "- item\n- item",        "html": "<ul><li>item</li><li>item</li></ul>",                               "cssClass": "post-body ul" },
+      "orderedList":  { "md": "1. item\n2. item",      "html": "<ol><li>item</li><li>item</li></ol>",                               "cssClass": "post-body ol" },
+      "paragraph":    { "md": "plain text line",       "html": "<p>plain text line</p>",                                           "cssClass": "post-body p" },
+      "table": {
+        "md": "| Col A | Col B |\n|-------|-------|\n| val 1 | val 2 |",
+        "html": "<table><thead><tr><th>Col A</th><th>Col B</th></tr></thead><tbody><tr><td>val 1</td><td>val 2</td></tr></tbody></table>",
+        "cssClass": "post-body table",
+        "notes": "Separator row (|---|---| pattern) is stripped; first row becomes <thead>"
+      }
     }
   },
 
-  "stylesheet": {
-    "file": "public/blogs/blog-styles.css",
-    "linkedAs": "../blog-styles.css",
-    "description": "Single external CSS file shared by all blog posts and the /blogs/ index. Contains all tokens, reset, layout, and element styles listed in markdownToHtml above.",
-    "fonts": [
-      { "name": "Instrument Serif", "role": "display (--font-display)", "source": "Google Fonts" },
-      { "name": "Work Sans",        "role": "body (--font-body)",    "source": "Google Fonts" },
-      { "name": "Fira Code",        "role": "mono (--font-mono) — fallback only, not preloaded", "source": "system fallback" }
-    ],
-    "colorScheme": "Nexus design system — warm beige light / dark charcoal dark, teal primary accent",
-    "darkMode": "[data-theme=dark] override + @media prefers-color-scheme fallback"
+  "pageShell": {
+    "_comment": "The HTML wrapper that generate-blog.js injects converted content into",
+    "doctype":    "<!DOCTYPE html>",
+    "htmlAttrs":  "lang=\"en\" data-theme=\"light\"",
+    "charset":    "UTF-8",
+    "viewport":   "width=device-width, initial-scale=1.0",
+    "metaDesc":   "<meta name=\"description\" content=\"{summary}\">",
+    "fonts":      "Google Fonts via <link> in <head> — Instrument Serif (display) + Work Sans (body)",
+    "stylesheet": "<link rel=\"stylesheet\" href=\"../blog-styles.css\"> — one level up from /blogs/<slug>/",
+    "sections": {
+      "siteHeader": "<header class=\"site-header\"> — sticky, blur backdrop, logo + theme toggle + 'All posts' link",
+      "main":       "<main id=\"main-content\"> → <article> → <header class=\"post-header reveal\"> + <hr class=\"post-divider\"> + <div class=\"post-body reveal\">{html content}</div>",
+      "siteFooter": "<footer class=\"site-footer\"> — '← Back to all posts' link"
+    },
+    "scripts": {
+      "themeToggle":  "Inline <script> — reads system preference, sets data-theme on <html>, toggles on button click",
+      "scrollReveal": "Inline <script> — IntersectionObserver on .reveal elements, adds .visible class at 0.1 threshold"
+    }
   },
 
-  "workflow": {
-    "triggerFile": ".github/workflows/create-blog-post.yml",
-    "scriptFile":  ".github/scripts/generate-blog.js",
-    "trigger": "on: issues: [opened, labeled] where label == 'blog'",
-    "steps": [
-      "1. Checkout repo",
-      "2. Setup Node 20",
-      "3. npm ci",
-      "4. node .github/scripts/generate-blog.js (env: ISSUE_BODY, ISSUE_TITLE, ISSUE_NUMBER)",
-      "5. Commit public/blogs/<slug>/<slug>.html + updated public/blogs/index.html",
-      "6. peaceiris/actions-gh-pages → deploy public/ to gh-pages branch",
-      "7. github-script → post live URL comment on issue, close issue"
-    ],
-    "outputPath": "public/blogs/<slug>/<slug>.html"
+  "cssClassMap": {
+    "_comment": "Quick reference: Markdown element → HTML element → CSS class in blog-styles.css",
+    "postHeader":   ".post-header   — article title block (reveal animation applied)",
+    "postMeta":     ".post-meta     — date + tags row above the title",
+    "postTitle":    ".post-title    — <h1> in article header, Instrument Serif display font",
+    "postSummary":  ".post-summary  — deck / subtitle below title",
+    "postDivider":  ".post-divider  — <hr> between header and body",
+    "postBody":     ".post-body     — wrapper div around all converted Markdown HTML",
+    "tag":          ".tag           — individual tag badge rendered from frontmatter tags[]",
+    "imgCredit":    ".img-credit    — 0.6rem AI-generated attribution line below images",
+    "reveal":       ".reveal        — fade+slide-up on IntersectionObserver, .visible triggers animation"
+  },
+
+  "listingPage": {
+    "_comment": "public/blogs/index.html is auto-generated/updated by generate-blog.js on each new post",
+    "path":        "public/blogs/index.html",
+    "stylesheet":  "<link rel=\"stylesheet\" href=\"./blog-styles.css\"> — same level as listing",
+    "entryHtml":   "<li class=\"post-card\"><a href=\"/blogs/{slug}/{slug}.html\"><span class=\"card-date\">{date}</span><span class=\"card-title\">{title}</span><span class=\"card-summary\">{summary}</span></a></li>",
+    "insertionPoint": "New entries are prepended before </ul> so newest posts appear first"
+  },
+
+  "designSystem": {
+    "_comment": "Summary of the visual design — see blog-styles.css for full token values",
+    "fonts": {
+      "display": "Instrument Serif (Google Fonts) — used for post titles, headings inside post body, site logo",
+      "body":    "Work Sans (Google Fonts) — all body copy, UI chrome, tags, metadata"
+    },
+    "palette": "Nexus — warm beige surfaces (#f7f6f2 light, #171614 dark) + Hydra Teal accent (#01696f light, #4f98a3 dark)",
+    "modes": "light (default) + dark — via [data-theme] attribute toggled by inline JS + prefers-color-scheme fallback",
+    "animations": "Scroll-reveal: .reveal elements fade in (opacity 0→1) + slide up (translateY 20px→0) via IntersectionObserver",
+    "typography": "Fluid clamp() scale — text-xs (12px) through text-2xl (56px). Body at text-base (16-18px). Post title at text-2xl. H2 at text-xl."
+  },
+
+  "skillIntegration": {
+    "_comment": "How Perplexity (via .perplexity/skills/create-blog.md) must format the issue body to match this spec",
+    "issueTitle":  "[blog] {title}",
+    "issueLabel":  "blog",
+    "issueBody":   "Frontmatter YAML block (--- ... ---) followed by Markdown content. All fields defined in frontmatter.fields above.",
+    "verifyStep":  "Draft is first saved to Notion /Blogs folder as DRAFT. User reviews and approves before Perplexity creates the GitHub Issue.",
+    "imageRule":   "Hero/inline images: either generate_image (add .img-credit attribution line) or search_web URL with source credit in figcaption. Never hallucinate URLs."
   }
 }

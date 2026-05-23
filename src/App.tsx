@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { motion, AnimatePresence } from 'framer-motion';
+import Blog from './Blog';
 import './App.css';
 
 interface Repository {
@@ -23,13 +24,13 @@ interface RepoDetails {
   tree: Array<{ path: string; type: string }>;
 }
 
-function RepoCard({ 
-  repo, 
-  isExpanded, 
-  onToggle 
-}: { 
-  repo: Repository; 
-  isExpanded: boolean; 
+function RepoCard({
+  repo,
+  isExpanded,
+  onToggle
+}: {
+  repo: Repository;
+  isExpanded: boolean;
   onToggle: () => void;
 }) {
   const [details, setDetails] = useState<RepoDetails | null>(null);
@@ -46,24 +47,19 @@ function RepoCard({
       ]);
 
       const languages = langRes.ok ? await langRes.json() : {};
-      
+
       let readme = 'No README found.';
       if (readmeRes.ok) {
         const readmeData = await readmeRes.json();
-        // Use TextDecoder to handle UTF-8 correctly
         const binaryString = atob(readmeData.content);
         const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
         const decoded = new TextDecoder('utf-8').decode(bytes);
         readme = sanitizeHtml(await marked(decoded));
       }
 
       const treeData = treeRes.ok ? await treeRes.json() : { tree: [] };
-      const tree = treeData.tree.slice(0, 15);
-
-      setDetails({ languages, readme, tree });
+      setDetails({ languages, readme, tree: treeData.tree.slice(0, 15) });
     } catch (err) {
       console.error('Failed to fetch details:', err);
     } finally {
@@ -76,17 +72,20 @@ function RepoCard({
     onToggle();
   };
 
-  // Determine display language if null
-  const displayLanguage = repo.language || (details?.tree.some(f => f.path.endsWith('.md')) ? 'Markdown' : (details?.tree.some(f => f.path.endsWith('.txt')) ? 'Text' : 'Other'));
+  const displayLanguage = repo.language ||
+    (details?.tree.some(f => f.path.endsWith('.md')) ? 'Markdown' :
+     details?.tree.some(f => f.path.endsWith('.txt')) ? 'Text' : 'Other');
 
-  const totalLangSize = details ? Object.values(details.languages).reduce((a, b) => a + b, 0) : 0;
+  const totalLangSize = details
+    ? Object.values(details.languages).reduce((a, b) => a + b, 0)
+    : 0;
 
   return (
-    <motion.div 
+    <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`repo-card ${isExpanded ? 'expanded' : ''}`} 
+      className={`repo-card ${isExpanded ? 'expanded' : ''}`}
       onClick={handleCardClick}
     >
       <div className="card-main">
@@ -95,23 +94,23 @@ function RepoCard({
         </div>
         {repo.homepage && (
           <div className="website-row">
-            <a href={repo.homepage.startsWith('http') ? repo.homepage : `https://${repo.homepage}`} 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="website-link"
-               onClick={e => e.stopPropagation()}>
+            <a
+              href={repo.homepage.startsWith('http') ? repo.homepage : `https://${repo.homepage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="website-link"
+              onClick={e => e.stopPropagation()}
+            >
               🔗 {repo.homepage.replace(/^https?:\/\//, '')}
             </a>
           </div>
         )}
         <p className="description">{repo.description || 'No description provided.'}</p>
-        
         <div className="topics">
           {repo.topics?.map(topic => (
             <span key={topic} className="topic-tag">#{topic}</span>
           ))}
         </div>
-
         <div className="card-footer">
           <span className="language">{displayLanguage}</span>
         </div>
@@ -119,12 +118,12 @@ function RepoCard({
 
       <AnimatePresence>
         {isExpanded && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="card-details" 
+            className="card-details"
             onClick={e => e.stopPropagation()}
           >
             {loading ? (
@@ -146,9 +145,9 @@ function RepoCard({
                   </div>
                   <div className="lang-bar">
                     {details && Object.entries(details.languages).map(([lang, val]) => (
-                      <div 
-                        key={lang} 
-                        className="lang-segment" 
+                      <div
+                        key={lang}
+                        className="lang-segment"
                         style={{ width: `${(val / totalLangSize) * 100}%` }}
                       />
                     ))}
@@ -168,10 +167,18 @@ function RepoCard({
 
                 <div className="detail-section readme-section">
                   <h4>README</h4>
-                  <div className="readme-content" dangerouslySetInnerHTML={{ __html: details?.readme || '' }} />
+                  <div
+                    className="readme-content"
+                    dangerouslySetInnerHTML={{ __html: details?.readme || '' }}
+                  />
                 </div>
 
-                <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="github-button">
+                <a
+                  href={repo.html_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="github-button"
+                >
                   View on GitHub
                 </a>
               </>
@@ -183,7 +190,7 @@ function RepoCard({
   );
 }
 
-function App() {
+function RepoShowcase() {
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -197,19 +204,16 @@ function App() {
         const response = await fetch('https://api.github.com/users/tototofu123/repos?sort=updated&per_page=100');
         if (!response.ok) throw new Error('Failed to fetch repositories');
         const data: Repository[] = await response.json();
-        
-        // Filter out design.md repos and forks
-        const filteredData = data.filter(repo => 
-          !repo.name.toLowerCase().includes('design.md') && 
-          !repo.name.toLowerCase().includes('design-md')
-        ).map(repo => {
-          // Specific fix for hkbus
-          if (repo.name === 'hk-bus-fetch' || repo.name === 'hkbus') {
-            return { ...repo, homepage: 'https://tototofu123.github.io/hk-bus-fetch/' };
-          }
-          return repo;
-        });
-
+        const filteredData = data
+          .filter(repo =>
+            !repo.name.toLowerCase().includes('design.md') &&
+            !repo.name.toLowerCase().includes('design-md')
+          )
+          .map(repo => {
+            if (repo.name === 'hk-bus-fetch' || repo.name === 'hkbus')
+              return { ...repo, homepage: 'https://tototofu123.github.io/hk-bus-fetch/' };
+            return repo;
+          });
         setRepos(filteredData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -218,49 +222,40 @@ function App() {
       }
     };
 
-    const checkScroll = () => {
-      if (!showScroll && window.pageYOffset > 400) {
-        setShowScroll(true);
-      } else if (showScroll && window.pageYOffset <= 400) {
-        setShowScroll(false);
-      }
-    };
-
+    const checkScroll = () => setShowScroll(window.pageYOffset > 400);
     window.addEventListener('scroll', checkScroll);
     fetchRepos();
     return () => window.removeEventListener('scroll', checkScroll);
-  }, [showScroll]);
+  }, []);
 
-  const filteredRepos = useMemo(() => {
-    return repos.filter(repo => 
+  const filteredRepos = useMemo(() =>
+    repos.filter(repo =>
       repo.name.toLowerCase().includes(search.toLowerCase()) ||
       (repo.language && repo.language.toLowerCase().includes(search.toLowerCase())) ||
       (repo.description && repo.description.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [repos, search]);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    ),
+    [repos, search]
+  );
 
   return (
     <div className="app-container">
       <header className="header">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
           repo.<span className="accent">lai.codes</span>
         </motion.h1>
-        <p className="subtitle">Interactive Showcase for <a href="https://github.com/tototofu123" target="_blank" rel="noopener noreferrer">@tototofu123</a></p>
-        
+        <p className="subtitle">Interactive Showcase for{' '}
+          <a href="https://github.com/tototofu123" target="_blank" rel="noopener noreferrer">@tototofu123</a>
+        </p>
         <div className="search-container">
-          <input 
-            type="text" 
-            placeholder="Search projects by name, language, or description..." 
+          <input
+            type="text"
+            placeholder="Search projects by name, language, or description..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             className="search-input"
           />
         </div>
@@ -271,9 +266,9 @@ function App() {
 
       <motion.div layout className="repo-grid">
         {filteredRepos.map(repo => (
-          <RepoCard 
-            key={repo.id} 
-            repo={repo} 
+          <RepoCard
+            key={repo.id}
+            repo={repo}
             isExpanded={expandedId === repo.id}
             onToggle={() => setExpandedId(expandedId === repo.id ? null : repo.id)}
           />
@@ -281,22 +276,20 @@ function App() {
       </motion.div>
 
       {filteredRepos.length === 0 && !loading && (
-        <div className="no-results">
-          No matches found in the woodpile.
-        </div>
+        <div className="no-results">No matches found in the woodpile.</div>
       )}
 
       <footer className="footer">
-        <p>© {new Date().getFullYear()} repo.lai.codes | Built with React + Framer Motion + GitHub API</p>
+        <p>© {new Date().getFullYear()} lai.codes | Built with React + Framer Motion + GitHub API</p>
       </footer>
 
       <AnimatePresence>
         {showScroll && (
-          <motion.button 
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            onClick={scrollToTop}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="scroll-top"
           >
             ↑
@@ -304,6 +297,28 @@ function App() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ── Simple hash-based router ──────────────────────────────────────────────────
+function App() {
+  const [route, setRoute] = useState(window.location.hash || '#repo');
+
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash || '#repo');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  return (
+    <>
+      <nav className="top-nav">
+        <a href="#repo" className={route === '#repo' ? 'active' : ''}>repos</a>
+        <span className="nav-sep">/</span>
+        <a href="#blog" className={route === '#blog' ? 'active' : ''}>blog</a>
+      </nav>
+      {route === '#blog' ? <Blog /> : <RepoShowcase />}
+    </>
   );
 }
 

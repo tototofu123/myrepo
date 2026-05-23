@@ -1,0 +1,64 @@
+name: "📝 New Blog Post"
+description: "Publish a new blog post to lai.codes/blog"
+labels: ["blog-post"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: "Post Title"
+      description: "This becomes the URL slug and page title."
+      placeholder: "e.g. Building a CMS with GitHub Issues"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: style
+    attributes:
+      label: "Style / Theme"
+      description: "Visual theme for this post."
+      options:
+        - dark
+        - light
+        - minimal
+        - colorful
+    validations:
+      required: true
+
+  - type: dropdown
+    id: animations
+    attributes:
+      label: "Animation Preset"
+      options:
+        - fade
+        - slide
+        - pop
+        - none
+    validations:
+      required: true
+
+  - type: textarea
+    id: images
+    attributes:
+      label: "Images (optional)"
+      description: "One per line: URL :: Alt text. Use [IMAGE_1], [IMAGE_2] in content to place them inline."
+      placeholder: |
+        https://example.com/photo.jpg :: Photo of my setup
+        https://example.com/diagram.png :: Architecture diagram
+
+  - type: textarea
+    id: content
+    attributes:
+      label: "Content (Markdown)"
+      description: "Full post content in Markdown. Use [IMAGE_n] to place images inline."
+      placeholder: |
+        ## Introduction
+
+        Write your post here...
+
+        [IMAGE_1]
+
+        ## Conclusion
+
+        Wrap it up.
+    validations:
+      required: true

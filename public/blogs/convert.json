@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Conversion spec: how Markdown elements map to HTML + CSS classes for blog posts.",
+  "stylesheet": "../blog-styles.css",
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300..700&display=swap"
+  ],
+  "output": {
+    "pattern": "/blogs/{slug}/{slug}.html",
+    "listing": "/blogs/index.html",
+    "stylesheet_relative_path": "../blog-styles.css"
+  },
+  "frontmatter": {
+    "fields": ["title", "slug", "date", "summary", "tags"],
+    "required": ["title", "slug", "date"],
+    "tags_type": "array",
+    "html_mapping": {
+      "title":   "<h1 class=\"post-title\">…</h1> inside <header class=\"post-header\">",
+      "date":    "<time datetime=\"…\"> inside .post-meta",
+      "summary": "<p class=\"post-summary\"> inside .post-header",
+      "tags":    "<span class=\"tag\"> elements inside .post-meta"
+    }
+  },
+  "md_to_html": [
+    { "md": "# H1",                     "html": "<h1>",          "css_class": ".post-body h1",         "note": "Section heading inside body — NOT post title" },
+    { "md": "## H2",                     "html": "<h2>",          "css_class": ".post-body h2" },
+    { "md": "### H3",                    "html": "<h3>",          "css_class": ".post-body h3" },
+    { "md": "#### H4–H6",               "html": "<h4>–<h6>",     "css_class": ".post-body h4, h5, h6",  "note": "Small-caps uppercase label style" },
+    { "md": "paragraph",                 "html": "<p>",           "css_class": ".post-body p" },
+    { "md": "**bold**",                  "html": "<strong>",      "css_class": ".post-body strong" },
+    { "md": "_italic_ or *italic*",      "html": "<em>",          "css_class": ".post-body em" },
+    { "md": "`inline code`",             "html": "<code>",        "css_class": ".post-body code",        "note": "Monospace, surface-2 bg, subtle border" },
+    { "md": "```lang\\n…\\n```",          "html": "<pre><code>",   "css_class": ".post-body pre code",    "note": "Dark bg #1c1b19, scrollable, shadow" },
+    { "md": "> blockquote",              "html": "<blockquote>",  "css_class": ".post-body blockquote",  "note": "Teal left-border, surface bg, italic" },
+    { "md": "- item or * item",          "html": "<ul><li>",      "css_class": ".post-body ul" },
+    { "md": "1. item",                   "html": "<ol><li>",      "css_class": ".post-body ol" },
+    { "md": "---",                       "html": "<hr>",          "css_class": ".post-body hr" },
+    { "md": "| table |",                 "html": "<table>",       "css_class": ".post-body table",       "note": "tabular-nums, uppercase th, hover rows" },
+    { "md": "![alt](url)",               "html": "<img>",         "css_class": ".post-body img",         "note": "Rounded, shadow; add loading=lazy" },
+    { "md": "![alt](url)\\n*caption*",  "html": "<figure><img><figcaption>", "css_class": ".post-body figure", "note": "Wrap image+italic line in <figure>" },
+    { "md": "[text](url)",               "html": "<a>",           "css_class": ".post-body a",           "note": "Teal underline, target=_blank for external" },
+    { "md": "AI image attribution",      "html": "<p class=\"img-credit\">", "css_class": ".img-credit", "note": "0.6rem, faint color — append after AI images" }
+  ],
+  "page_structure": {
+    "html_skeleton": [
+      "<!DOCTYPE html>",
+      "<html lang=\"en\" data-theme=\"light\">",
+      "  <head> … meta, fonts, <link rel=\"stylesheet\" href=\"../blog-styles.css\"> … </head>",
+      "  <body>",
+      "    <a href=\"#main-content\" class=\"sr-only\">Skip to content</a>",
+      "    <header class=\"site-header\"> … logo, nav, theme-toggle … </header>",
+      "    <main id=\"main-content\">",
+      "      <article>",
+      "        <header class=\"post-header reveal\"> … date, tags, h1.post-title, p.post-summary … </header>",
+      "        <hr class=\"post-divider\">",
+      "        <div class=\"post-body reveal\"> … converted HTML content … </div>",
+      "      </article>",
+      "    </main>",
+      "    <footer class=\"site-footer\"> … </footer>",
+      "    <script> … theme toggle + scroll-reveal JS … </script>",
+      "  </body>",
+      "</html>"
+    ],
+    "theme_toggle_js": "see generate-blog.js — inline JS block for light/dark toggle",
+    "scroll_reveal_js": "IntersectionObserver on .reveal elements — adds .visible class"
+  },
+  "ai_image_credit": {
+    "html": "<p class=\"img-credit\">AI-generated &middot; Prompt: \"{prompt}\"</p>",
+    "font_size": "0.6rem",
+    "color": "var(--color-text-faint)",
+    "placement": "immediately after the <img> tag"
+  }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog — repo.lai.codes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f;
+      --surface: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #888;
+      --accent: #a8ff78;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .site-nav {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .site-nav a { text-decoration: none; color: var(--muted); font-size: 13px; transition: color 0.15s; }
+    .site-nav a:hover { color: var(--text); }
+    .site-nav .sep { color: var(--border); }
+    .site-nav .brand { color: var(--accent); font-weight: 500; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 56px 24px 120px; }
+    .page-header { margin-bottom: 48px; }
+    .page-header h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .page-header p { color: var(--muted); font-size: 14px; }
+    .post-list { display: flex; flex-direction: column; gap: 0; }
+    .post-item {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .post-item:hover .post-item-title { color: var(--accent); }
+    .post-item-date { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; min-width: 90px; }
+    .post-item-title { font-size: 15px; color: var(--text); font-weight: 400; }
+    .empty { color: var(--muted); font-size: 14px; padding: 40px 0; }
+    .loader { color: var(--muted); font-size: 13px; padding: 40px 0; font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <a href="/" class="brand">repo.lai.codes</a>
+    <span class="sep">/</span>
+    <a href="/blog" style="color:var(--text)">blog</a>
+  </nav>
+
+  <div class="wrap">
+    <div class="page-header">
+      <h1>Blog</h1>
+      <p>Notes, experiments, and random thoughts.</p>
+    </div>
+    <div id="post-list" class="post-list">
+      <div class="loader">Loading posts...</div>
+    </div>
+  </div>
+
+  <script>
+    fetch('/posts/index.json')
+      .then(r => r.json())
+      .then(posts => {
+        const list = document.getElementById('post-list');
+        if (!posts.length) {
+          list.innerHTML = '<p class="empty">No posts yet.</p>';
+          return;
+        }
+        list.innerHTML = posts.map(p => `
+          <a class="post-item" href="/posts/${p.slug}.html">
+            <span class="post-item-date">${p.date}</span>
+            <span class="post-item-title">${p.title}</span>
+          </a>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('post-list').innerHTML = '<p class="empty">Could not load posts.</p>';
+      });
+  </script>
+</body>
+</html>

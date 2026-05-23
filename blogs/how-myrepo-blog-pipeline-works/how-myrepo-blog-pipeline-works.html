@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A deep-dive into the automated pipeline that turns a Perplexity chat message into a live, styled blog post on GitHub Pages — no manual deployment needed.">
+  <title>How myrepo's Perplexity → GitHub → Pages Blog Pipeline Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../blog-styles.css">
+</head>
+<body>
+
+<a href="#main-content" class="sr-only">Skip to content</a>
+
+<header class="site-header">
+  <a href="/" class="site-logo">✶ Blog</a>
+  <div class="header-actions">
+    <a href="/blogs/" class="btn-ghost">All posts</a>
+    <button id="theme-toggle" aria-label="Switch to dark mode" data-theme-toggle>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main id="main-content">
+  <article>
+    <header class="post-header reveal">
+      <div class="post-meta">
+        <time datetime="2026-05-23">2026-05-23</time>
+        <span class="tag">github-actions</span><span class="tag">automation</span><span class="tag">github-pages</span><span class="tag">perplexity</span><span class="tag">markdown</span>
+      </div>
+      <h1 class="post-title">How myrepo's Perplexity → GitHub → Pages Blog Pipeline Works</h1>
+      <p class="post-summary">A deep-dive into the automated pipeline that turns a Perplexity chat message into a live, styled blog post on GitHub Pages — no manual deployment needed.</p>
+    </header>
+    <hr class="post-divider">
+    <div class="post-body reveal">
+      <h2>Overview</h2>
+
+<p>Every post on this blog starts life as a single sentence in a Perplexity chat window. No Git commands. No local editor. No manual deploys. This post explains the four-layer system that makes that possible — and how each layer hands off to the next.</p>
+
+<hr>
+
+<h2>Layer 1 — The Perplexity Skill</h2>
+
+<p>The skill lives at <code>.perplexity/skills/create-blog.md</code> inside the repo. Every time a session starts, Perplexity reads skill files it is given access to, so when you say <strong>"create a blog about X"</strong>, it already knows what to do:</p>
+
+<ol><li>Collect <strong>title</strong>, <strong>slug</strong>, <strong>summary</strong>, <strong>tags</strong>, and <strong>content</strong> (asking you only for what's missing)</li><li>Format everything into a structured Markdown block using a strict frontmatter template</li><li>Save a Markdown draft into Notion <code>/Blogs/<slug>/</code> and wait for your approval</li><li>Only after you say "publish this blog" — create a GitHub Issue titled <code>[blog] <your title></code> with the label <code>blog</code></li></ol>
+<p>The skill is just a Markdown file — updating it is as simple as editing <code>.perplexity/skills/create-blog.md</code> in the repo. No code changes, no redeployment.</p>
+
+<hr>
+
+<h2>Layer 2 — The GitHub Issue as a Data Container</h2>
+
+<p>GitHub Issues are the pipeline's message bus. The body carries all the data the workflow needs:</p>
+
+<table><thead><tr><th>Field</th><th>Where it lives</th><th>Example</th></tr></thead><tbody><tr><td><code>title</code></td><td>YAML frontmatter</td><td><code>"How myrepo Works"</code></td></tr><tr><td><code>slug</code></td><td>YAML frontmatter</td><td><code>"how-myrepo-works"</code></td></tr><tr><td><code>date</code></td><td>YAML frontmatter</td><td><code>"2026-05-23"</code></td></tr><tr><td><code>tags</code></td><td>YAML frontmatter</td><td><code>[automation, github]</code></td></tr><tr><td>Post content</td><td>After the <code>---</code> block</td><td>Full Markdown prose</td></tr></tbody></table>
+<p>Using issues gives you a built-in <strong>human verification step</strong> — only adding the <code>blog</code> label triggers the workflow. Labelling is the "go" signal.</p>
+
+<hr>
+
+<h2>Layer 3 — GitHub Actions Workflow</h2>
+
+<p>The workflow file lives at <code>.github/workflows/create-blog-post.yml</code>. It fires on:</p>
+
+<pre><code class="language-yaml">on:
+<p>  issues:</p>
+<p>    types: [opened, labeled]</code></pre></p>
+
+<p>Steps in order:</p>
+
+<ol><li><code>checkout</code> — clone the repo at HEAD</li><li><code>setup-node</code> — install Node 20</li><li><code>npm ci</code> — install dependencies (marked, gray-matter)</li><li><code>node .github/scripts/generate-blog.js</code> — parse issue body → write <code>public/blogs/<slug>/<slug>.html</code> and <code>public/blogs/<slug>/convert.json</code></li><li>Commit + push the new files to main</li><li><code>peaceiris/actions-gh-pages</code> — copy <code>public/</code> to the <code>gh-pages</code> branch</li><li>Bot comments on the issue with the live URL, then closes it</li></ol>
+<p>Total time from issue creation to live post: <strong>~90 seconds</strong>.</p>
+
+<hr>
+
+<h2>Layer 4 — The Generator Script</h2>
+
+<code>.github/scripts/generate-blog.js</code> does three things:
+
+<h3>1. Parse the issue body</h3>
+
+<p>It uses <strong>gray-matter</strong> to split YAML frontmatter from Markdown content:</p>
+
+<pre><code class="language-js">const { data: meta, content } = matter(issueBody);
+<p>// meta.title, meta.slug, meta.date, meta.tags</p>
+<p>// content = the Markdown post body</code></pre></p>
+
+<h3>2. Convert Markdown → HTML</h3>
+
+<p>It uses <strong>marked</strong> with GFM support (tables, strikethrough, task lists, fenced code blocks):</p>
+
+<pre><code class="language-js">const html = marked.parse(content, { gfm: true, breaks: true });</code></pre>
+
+<h3>3. Inject into a styled HTML shell</h3>
+
+<p>The script wraps the HTML in a full page template with:</p>
+
+<ul><li>Instrument Serif (display font) + Work Sans (body font) from Google Fonts</li><li>CSS variables for light/dark theming (<code>prefers-color-scheme</code> + manual toggle)</li><li>Scroll-reveal animations via <code>IntersectionObserver</code></li><li>Syntax highlighting for code blocks</li><li>Responsive layout capped at 720px</li><li>Output written to <code>public/blogs/<slug>/<slug>.html</code></li><li>Shared styles referenced from <code>public/blogs/blog-styles.css</code></li><li>Conversion spec written to <code>public/blogs/<slug>/convert.json</code></li></ul>
+<hr>
+
+<h2>End-to-End Summary</h2>
+
+<pre><code class="language-text">Perplexity chat
+<p>  └─ reads .perplexity/skills/create-blog.md</p>
+<p>  └─ writes MD draft → saves to Notion /Blogs/&lt;slug&gt;/</p>
+<p>  └─ waits for your approval</p>
+<p>  └─ on "publish" → creates GitHub Issue [blog] labeled 'blog'</p>
+<p>         │</p>
+<p>         ▼</p>
+<p>GitHub Actions (create-blog-post.yml)</p>
+<p>  └─ triggers on issues: labeled</p>
+<p>  └─ runs generate-blog.js</p>
+<p>         │</p>
+<p>         ▼</p>
+<p>public/blogs/&lt;slug&gt;/&lt;slug&gt;.html  ← styled, dark/light, responsive</p>
+<p>public/blogs/&lt;slug&gt;/convert.json ← conversion spec</p>
+<p>public/blogs/index.html          ← auto-updated listing</p>
+<p>         │</p>
+<p>         ▼</p>
+<p>gh-pages branch → GitHub Pages → your live site</p>
+<p>         │</p>
+<p>         ▼</p>
+<p>Bot closes the issue + posts the live URL as a comment</code></pre></p>
+
+<p>The whole thing is stateless — every part is a file in the repo. You can audit, modify, or extend any layer by editing a single file.</p>
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>&larr; <a href="/blogs/">Back to all posts</a></p>
+</footer>
+
+<script>
+  // Theme toggle
+  (function(){
+    const t = document.querySelector('[data-theme-toggle]');
+    const r = document.documentElement;
+    let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+    r.setAttribute('data-theme', d);
+    if (t) {
+      const sunSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+      const moonSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      const update = () => {
+        r.setAttribute('data-theme', d);
+        t.setAttribute('aria-label', 'Switch to ' + (d==='dark'?'light':'dark') + ' mode');
+        t.innerHTML = d === 'dark' ? moonSvg : sunSvg;
+      };
+      update();
+      t.addEventListener('click', () => { d = d==='dark'?'light':'dark'; update(); });
+    }
+  })();
+
+  // Scroll reveal
+  (function(){
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    els.forEach(el => io.observe(el));
+  })();
+</script>
+
+</body>
+</html>

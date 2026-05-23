@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./blog-styles.css">
+  <style>
+    main{max-width:720px;margin-inline:auto;padding:var(--space-12) var(--space-6) var(--space-16)}
+    .page-title{font-family:var(--font-display);font-size:var(--text-2xl);letter-spacing:-0.03em;margin-bottom:var(--space-2)}
+    .page-subtitle{color:var(--color-text-muted);font-size:var(--text-lg);margin-bottom:var(--space-10)}
+    .post-list{list-style:none;display:flex;flex-direction:column;gap:var(--space-2)}
+    .post-card a{display:grid;grid-template-columns:120px 1fr;gap:var(--space-4) var(--space-6);align-items:baseline;padding:var(--space-4);border-radius:var(--radius-lg);text-decoration:none;transition:background var(--transition)}
+    .post-card a:hover{background:var(--color-surface)}
+    .card-date{font-size:var(--text-sm);color:var(--color-text-faint);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .card-title{font-weight:500;color:var(--color-text)}
+    .card-summary{grid-column:2;font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-1)}
+    @media(max-width:640px){.post-card a{grid-template-columns:1fr}.card-date{font-size:var(--text-xs)}}
+  </style>
+</head>
+<body>
+<a href="#main-content" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden">Skip to content</a>
+<header class="site-header">
+  <a href="/" class="site-logo">✶ Blog</a>
+  <button id="theme-toggle" aria-label="Switch to dark mode" data-theme-toggle>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  </button>
+</header>
+<main id="main-content">
+  <h1 class="page-title">Blog</h1>
+  <p class="page-subtitle">Notes, projects, and ideas.</p>
+  <ul class="post-list">
+  <li class="post-card" data-date="2026-05-23">
+    <a href="/blogs/how-myrepo-blog-pipeline-works/how-myrepo-blog-pipeline-works.html">
+      <span class="card-date">2026-05-23</span>
+      <span class="card-title">How myrepo's Perplexity → GitHub → Pages Blog Pipeline Works</span>
+      <span class="card-summary">A deep-dive into the automated pipeline that turns a Perplexity chat message into a live, styled blog post on GitHub Pages — no manual deployment needed.</span>
+    </a>
+  </li>
+  </ul>
+</main>
+<footer class="site-footer">&larr; <a href="/">Home</a></footer>
+<script>
+(function(){const t=document.querySelector('[data-theme-toggle]');const r=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';r.setAttribute('data-theme',d);if(t){const sun='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';const moon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';const upd=()=>{r.setAttribute('data-theme',d);t.setAttribute('aria-label','Switch to '+(d==='dark'?'light':'dark')+' mode');t.innerHTML=d==='dark'?moon:sun};upd();t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';upd()})}})()
+</script>
+</body></html>

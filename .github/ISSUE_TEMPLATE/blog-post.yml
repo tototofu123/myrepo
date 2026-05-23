@@ -1,64 +1,48 @@
-name: "📝 New Blog Post"
-description: "Publish a new blog post to lai.codes/blog"
-labels: ["blog-post"]
+name: 📝 New Blog Post
+description: Create a new blog post (triggered by the Perplexity blog skill)
+title: "[blog] "
+labels: ["blog"]
 body:
   - type: input
     id: title
     attributes:
-      label: "Post Title"
-      description: "This becomes the URL slug and page title."
-      placeholder: "e.g. Building a CMS with GitHub Issues"
+      label: Post Title
+      placeholder: My Awesome Post
     validations:
       required: true
-
-  - type: dropdown
-    id: style
+  - type: input
+    id: slug
     attributes:
-      label: "Style / Theme"
-      description: "Visual theme for this post."
-      options:
-        - dark
-        - light
-        - minimal
-        - colorful
+      label: Slug
+      description: URL-friendly identifier, e.g. my-awesome-post
+      placeholder: my-awesome-post
     validations:
       required: true
-
-  - type: dropdown
-    id: animations
+  - type: input
+    id: date
     attributes:
-      label: "Animation Preset"
-      options:
-        - fade
-        - slide
-        - pop
-        - none
+      label: Date
+      description: Publication date in YYYY-MM-DD format
+      placeholder: "2026-05-23"
     validations:
       required: true
-
-  - type: textarea
-    id: images
+  - type: input
+    id: summary
     attributes:
-      label: "Images (optional)"
-      description: "One per line: URL :: Alt text. Use [IMAGE_1], [IMAGE_2] in content to place them inline."
-      placeholder: |
-        https://example.com/photo.jpg :: Photo of my setup
-        https://example.com/diagram.png :: Architecture diagram
-
+      label: Summary
+      description: One-sentence description
+      placeholder: A short description of the post.
+  - type: input
+    id: tags
+    attributes:
+      label: Tags
+      description: Comma-separated list of tags
+      placeholder: tech, engineering
   - type: textarea
     id: content
     attributes:
-      label: "Content (Markdown)"
-      description: "Full post content in Markdown. Use [IMAGE_n] to place images inline."
-      placeholder: |
-        ## Introduction
-
-        Write your post here...
-
-        [IMAGE_1]
-
-        ## Conclusion
-
-        Wrap it up.
+      label: Content (Markdown)
+      description: The full body of the blog post in Markdown.
+      render: markdown
     validations:
       required: true

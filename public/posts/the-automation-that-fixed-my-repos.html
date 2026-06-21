@@ -21,7 +21,6 @@
     }
 
     html { scroll-behavior: smooth; }
-
     body {
       background: var(--bg);
       color: var(--text);
@@ -35,13 +34,8 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    .wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem 6rem;
-    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
 
-    /* Back → blogs screen */
     .back {
       font-family: var(--font-ui);
       font-size: 0.8125rem;
@@ -58,12 +52,11 @@
       width: 100%;
       aspect-ratio: 16/7;
       object-fit: cover;
-      border-radius: 6px;
+      border-radius: 4px;
       margin-bottom: 0.75rem;
       display: block;
       background: var(--surface);
     }
-
     .hero-credit {
       font-family: var(--font-ui);
       font-size: 0.75rem;
@@ -80,14 +73,12 @@
       letter-spacing: -0.01em;
       margin-bottom: 0.75rem;
     }
-
     .byline {
       font-family: var(--font-ui);
       font-size: 0.8125rem;
       color: var(--muted);
       margin-bottom: 2.5rem;
     }
-
     .divider {
       border: none;
       border-top: 1px solid var(--border);
@@ -95,7 +86,6 @@
     }
 
     p { margin-bottom: 1.25rem; max-width: 68ch; }
-
     h2 {
       font-family: var(--font-ui);
       font-size: 0.8125rem;
@@ -105,7 +95,6 @@
       color: var(--muted);
       margin: 2.5rem 0 0.75rem;
     }
-
     code {
       font-family: 'Menlo', 'Courier New', monospace;
       font-size: 0.875em;
@@ -117,61 +106,102 @@
     }
 
     /* ── Short read + fade ── */
-    .short-read-wrap {
-      position: relative;
-    }
-
-    /* The clamp: shows roughly first paragraph, fades the rest */
+    .short-read-wrap { position: relative; }
     .short-read {
-      max-height: 8.5rem;   /* ~first paragraph visible */
+      max-height: 8.5rem;
       overflow: hidden;
       transition: max-height 0.5s ease;
     }
-    .short-read.expanded {
-      max-height: 600px;
-    }
-
-    /* Gradient fade at the bottom of the clipped text */
+    .short-read.expanded { max-height: 600px; }
     .short-read-fade {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       height: 5rem;
       background: linear-gradient(to bottom, transparent, var(--bg));
       pointer-events: none;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.35s ease;
     }
     .short-read-fade.hidden { opacity: 0; }
 
-    /* ── Read more button ── */
-    .long-read-toggle {
+    /* ── Visual trigger ──
+       Pure CSS: three animated dots inside a pill container.
+       No text. On hover the dots brighten + pill gets a faint border.
+       JS removes the whole element after click (one-way). */
+    .read-trigger {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.6rem;
       width: 100%;
-      font-family: var(--font-ui);
-      font-size: 1.0625rem;   /* same as body — clearly readable */
-      font-weight: 500;
-      color: var(--muted);
-      cursor: pointer;
+      padding: 1.5rem 0 1rem;
       background: none;
       border: none;
-      padding: 1.25rem 0 0.75rem;
-      margin-top: 0.5rem;
-      transition: color 0.18s;
-      user-select: none;
-      letter-spacing: 0.01em;
+      cursor: pointer;
     }
-    .long-read-toggle:hover { color: var(--text); }
-    .long-read-toggle .arrow {
-      display: inline-block;
-      font-size: 1.3em;
-      line-height: 1;
-      transition: transform 0.3s ease;
+    .read-trigger-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border: 1px solid var(--faint);
+      border-radius: 999px;
+      transition: border-color 0.2s ease, background 0.2s ease;
     }
-    .long-read-toggle.open .arrow { transform: rotate(180deg); }
+    .read-trigger:hover .read-trigger-pill {
+      border-color: var(--muted);
+      background: rgba(255,255,255,0.04);
+    }
+    /* Three dots */
+    .read-trigger-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--faint);
+      transition: background 0.2s ease, transform 0.2s ease;
+      animation: dot-breathe 2.4s ease-in-out infinite;
+    }
+    .read-trigger-dot:nth-child(2) { animation-delay: 0.3s; }
+    .read-trigger-dot:nth-child(3) { animation-delay: 0.6s; }
+    .read-trigger:hover .read-trigger-dot {
+      background: var(--muted);
+    }
+    @keyframes dot-breathe {
+      0%, 100% { transform: translateY(0);   opacity: 0.5; }
+      50%       { transform: translateY(-3px); opacity: 1; }
+    }
+    /* Also add a subtle chevron below dots */
+    .read-trigger-chevron {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-right: 1.5px solid var(--faint);
+      border-bottom: 1.5px solid var(--faint);
+      transform: rotate(45deg) translateY(-2px);
+      margin-top: 26px;
+      transition: border-color 0.2s ease, margin-top 0.2s ease;
+    }
+    .read-trigger-pill-wrap {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .read-trigger:hover .read-trigger-chevron {
+      border-color: var(--muted);
+      margin-top: 30px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .read-trigger-dot { animation: none; }
+    }
+
+    /* Fade-out animation when trigger is removed */
+    .read-trigger.dismissing {
+      animation: trigger-out 0.35s ease forwards;
+    }
+    @keyframes trigger-out {
+      to { opacity: 0; transform: translateY(8px); pointer-events: none; }
+    }
 
     /* ── Long read ── */
     .long-read {
@@ -180,14 +210,9 @@
       opacity: 0;
       transition: max-height 0.55s ease, opacity 0.4s ease;
     }
-    .long-read.open {
-      max-height: 5000px;
-      opacity: 1;
-    }
-
+    .long-read.open { max-height: 5000px; opacity: 1; }
     .long-read-inner {
       padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
       margin-top: 0.5rem;
     }
 
@@ -218,7 +243,6 @@
 <body>
   <div class="wrap">
 
-    <!-- Back to blogs screen -->
     <a href="/blog" class="back">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       repo.lai.codes
@@ -228,18 +252,15 @@
       class="hero-img"
       src="https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=1200&q=80"
       alt="Terminal window with code on a dark screen"
-      width="1200"
-      height="525"
-      loading="eager"
+      width="1200" height="525" loading="eager"
     />
     <p class="hero-credit">Photo: <a href="https://unsplash.com/photos/VieM9BdZKFo" target="_blank" rel="noopener noreferrer">Gabriel Heinzer on Unsplash</a></p>
 
     <h1>The Automation That Fixed My Repos Before It Even Got Built</h1>
     <p class="byline">Toto Lai &nbsp;&middot;&nbsp; June 22, 2026</p>
 
-    <hr class="divider" />
+    <hr class="divider" id="mid-divider" />
 
-    <!-- Short read with fade -->
     <div class="short-read-wrap">
       <div class="short-read" id="short-read">
         <p>The idea was to build something that takes a public document link, fetches whatever is inside it, and hands the content off for processing. Google Docs, Notion pages, GitHub READMEs, whatever is publicly accessible. The goal was to stop doing that manually.</p>
@@ -249,10 +270,16 @@
       <div class="short-read-fade" id="short-fade"></div>
     </div>
 
-    <!-- Read more — centred, big, obvious -->
-    <button class="long-read-toggle" id="toggle" aria-expanded="false" aria-controls="long-read">
-      <span class="arrow">&#8964;</span>
-      <span id="toggle-label">Read more &nbsp;&middot;&nbsp; ~3 min</span>
+    <!-- Visual trigger: pure CSS pill + dots + chevron, no text -->
+    <button class="read-trigger" id="trigger" aria-label="Read full article" aria-expanded="false" aria-controls="long-read">
+      <div class="read-trigger-pill-wrap">
+        <div class="read-trigger-pill">
+          <span class="read-trigger-dot"></span>
+          <span class="read-trigger-dot"></span>
+          <span class="read-trigger-dot"></span>
+        </div>
+        <span class="read-trigger-chevron"></span>
+      </div>
     </button>
 
     <div class="long-read" id="long-read" role="region">
@@ -290,21 +317,27 @@
   </div>
 
   <script>
-    const btn    = document.getElementById('toggle');
-    const region = document.getElementById('long-read');
-    const label  = document.getElementById('toggle-label');
-    const shortR = document.getElementById('short-read');
-    const fade   = document.getElementById('short-fade');
+    const trigger  = document.getElementById('trigger');
+    const region   = document.getElementById('long-read');
+    const shortR   = document.getElementById('short-read');
+    const fade     = document.getElementById('short-fade');
+    const divider  = document.getElementById('mid-divider');
 
-    btn.addEventListener('click', () => {
-      const open = region.classList.toggle('open');
-      btn.classList.toggle('open', open);
-      btn.setAttribute('aria-expanded', open);
-      label.textContent = open ? 'Show less' : 'Read more \u00a0\u00b7\u00a0 ~3 min';
+    trigger.addEventListener('click', () => {
+      // Expand content
+      region.classList.add('open');
+      shortR.classList.add('expanded');
+      fade.classList.add('hidden');
 
-      // expand short-read fully and kill fade when opened
-      shortR.classList.toggle('expanded', open);
-      fade.classList.toggle('hidden', open);
+      // Dismiss trigger + divider — fade out then remove from DOM
+      trigger.classList.add('dismissing');
+      divider.style.transition = 'opacity 0.3s ease';
+      divider.style.opacity = '0';
+
+      setTimeout(() => {
+        trigger.remove();
+        divider.remove();
+      }, 380);
     });
   </script>
 </body>

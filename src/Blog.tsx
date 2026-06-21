@@ -7,6 +7,8 @@ interface PostMeta {
   title: string;
   date: string;
   issue: string;
+  summary?: string;
+  image?: string;
   style?: string;
 }
 
@@ -92,18 +94,33 @@ export default function Blog({ postSlug }: { postSlug?: string }) {
           <a
             key={post.slug}
             href={`#blog/${post.slug}`}
-            className="blog-card"
+            className={`blog-card${post.image ? ' blog-card--has-img' : ''}`}
           >
-            <div className="blog-card-top">
-              <span
-                className="blog-style-dot"
-                style={{ background: styleColors[post.style || 'dark'] }}
-                title={post.style || 'dark'}
-              />
-              <span className="blog-date">{post.date}</span>
+            {post.image && (
+              <div className="blog-card-img-wrap">
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="blog-card-img"
+                  loading="lazy"
+                  width={600}
+                  height={200}
+                />
+              </div>
+            )}
+            <div className="blog-card-body">
+              <div className="blog-card-top">
+                <span
+                  className="blog-style-dot"
+                  style={{ background: styleColors[post.style || 'dark'] }}
+                  title={post.style || 'dark'}
+                />
+                <span className="blog-date">{post.date}</span>
+              </div>
+              <h2 className="blog-title">{post.title}</h2>
+              {post.summary && <p className="blog-summary">{post.summary}</p>}
+              <span className="blog-read">Read post →</span>
             </div>
-            <h2 className="blog-title">{post.title}</h2>
-            <span className="blog-read">Read post →</span>
           </a>
         ))}
       </div>

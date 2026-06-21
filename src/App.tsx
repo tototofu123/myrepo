@@ -81,10 +81,7 @@ function RepoCard({
     : 0;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className={`repo-card ${isExpanded ? 'expanded' : ''}`}
       onClick={handleCardClick}
     >
@@ -186,7 +183,7 @@ function RepoCard({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
@@ -310,14 +307,22 @@ function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  // #blog/some-slug  → post view
+  // #blog            → blog list
+  // #repo (default)  → repo showcase
+  const isBlogPost = route.startsWith('#blog/');
+  const postSlug = isBlogPost ? route.slice(6) : null;
+
   return (
     <>
       <nav className="top-nav">
         <a href="#repo" className={route === '#repo' ? 'active' : ''}>repos</a>
         <span className="nav-sep">/</span>
-        <a href="#blog" className={route === '#blog' ? 'active' : ''}>blog</a>
+        <a href="#blog" className={route === '#blog' || isBlogPost ? 'active' : ''}>blog</a>
       </nav>
-      {route === '#blog' ? <Blog /> : <RepoShowcase />}
+      {route === '#blog' && <Blog />}
+      {isBlogPost && postSlug && <Blog postSlug={postSlug} />}
+      {!route.startsWith('#blog') && <RepoShowcase />}
     </>
   );
 }

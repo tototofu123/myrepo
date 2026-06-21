@@ -19,9 +19,8 @@
   --accent: #a8ff78;
   --font: 'Inter', sans-serif;
   --mono: 'JetBrains Mono', monospace;
-  --radius: 4px;          /* ← changed from 8px */
+  --radius: 4px;
   --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
-  /* glow colours: accent teal-green + a soft white */
   --glow-1: #a8ff78;
   --glow-2: #00e5ff;
 }
@@ -70,7 +69,6 @@ a:hover { opacity: 0.75; }
   letter-spacing: -0.03em;
   line-height: 1.1;
   margin-bottom: 10px;
-  /* no entrance animation */
 }
 .accent { color: var(--accent); }
 .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
@@ -99,32 +97,25 @@ a:hover { opacity: 0.75; }
   gap: 16px;
 }
 
-/* ── Glow card base (shared by repo-card + blog-card) ────────────────── */
+/* ── Glow card base ─────────────────────────────────────────────────── */
 /*
-  Technique: two pseudo-elements sized slightly larger than the card via
-  negative inset. Both carry a rotating conic-gradient keyed on --glow-angle.
-  ::before  = sharp border layer  (z-index -1)
-  ::after   = blurred glow halo   (z-index -2)
-  Animation only starts on :hover (paused otherwise).
-  On :active the card background brightens → "lights up" effect.
-  Reference: lionel-peramo.com/posts/high-performance-animated-glow-border-css/
-           + Theodore L. @property technique (LinkedIn / theosoti.com)
+  ::before  = sharp 1px border layer  (z-index -1)
+  ::after   = tight blurred halo      (z-index -2, only 2px bleed + 6px blur)
+  Both invisible at rest, spin+fade-in on :hover.
 */
 
 /* ── Repo card ───────────────────────────────────────────────────────── */
 .repo-card {
   position: relative;
   background: var(--surface);
-  border: none;                        /* border handled by pseudo ::before */
+  border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  /* NO entrance/appear animation */
   transition: background var(--transition);
-  overflow: visible;                   /* let glow escape edges */
+  overflow: visible;
   isolation: isolate;
 }
 
-/* Clip the inner content so the pseudo glow sits outside */
 .repo-card .card-main,
 .repo-card .card-details {
   position: relative;
@@ -132,11 +123,9 @@ a:hover { opacity: 0.75; }
   background: var(--surface);
   border-radius: var(--radius);
 }
-/* top card section gets full radius, details only bottom */
 .repo-card .card-main { border-radius: var(--radius) var(--radius) 0 0; }
 .repo-card .card-details { border-radius: 0 0 var(--radius) var(--radius); }
 
-/* Thin static border — visible at rest */
 .repo-card::before {
   content: '';
   position: absolute;
@@ -152,17 +141,16 @@ a:hover { opacity: 0.75; }
   );
   z-index: -1;
   animation: glow-spin 3s linear infinite;
-  animation-play-state: paused;        /* only runs on hover */
-  opacity: 0;                          /* invisible at rest */
+  animation-play-state: paused;
+  opacity: 0;
   transition: opacity 300ms ease;
 }
 
-/* Blurred glow halo behind — further back */
 .repo-card::after {
   content: '';
   position: absolute;
-  inset: -4px;
-  border-radius: calc(var(--radius) + 4px);
+  inset: -2px;
+  border-radius: calc(var(--radius) + 2px);
   background: conic-gradient(
     from var(--glow-angle),
     transparent 0deg,
@@ -172,27 +160,24 @@ a:hover { opacity: 0.75; }
     transparent 360deg
   );
   z-index: -2;
-  filter: blur(10px);
+  filter: blur(6px);
   animation: glow-spin 3s linear infinite;
   animation-play-state: paused;
   opacity: 0;
   transition: opacity 300ms ease;
 }
 
-/* Hover: start spinning, fade in glow */
 .repo-card:hover::before,
 .repo-card:hover::after {
   animation-play-state: running;
   opacity: 1;
 }
 
-/* Click / active: brighten the whole card surface */
 .repo-card:active .card-main,
 .repo-card:active .card-details {
-  background: #242424;                 /* slightly lighter than --surface */
+  background: #242424;
 }
 
-/* Expanded state keeps a static accent outline */
 .repo-card.expanded::before {
   opacity: 1;
   animation-play-state: running;
@@ -208,12 +193,10 @@ a:hover { opacity: 0.75; }
   padding: 20px 24px;
   color: var(--text);
   isolation: isolate;
-  /* NO entrance/appear animation */
   transition: background var(--transition);
   overflow: visible;
 }
 
-/* Same glow pseudo pattern */
 .blog-card::before {
   content: '';
   position: absolute;
@@ -236,8 +219,8 @@ a:hover { opacity: 0.75; }
 .blog-card::after {
   content: '';
   position: absolute;
-  inset: -4px;
-  border-radius: calc(var(--radius) + 4px);
+  inset: -2px;
+  border-radius: calc(var(--radius) + 2px);
   background: conic-gradient(
     from var(--glow-angle),
     transparent 0deg,
@@ -247,7 +230,7 @@ a:hover { opacity: 0.75; }
     transparent 360deg
   );
   z-index: -2;
-  filter: blur(10px);
+  filter: blur(6px);
   animation: glow-spin 3s linear infinite;
   animation-play-state: paused;
   opacity: 0;
@@ -318,7 +301,6 @@ a:hover { opacity: 0.75; }
   font-weight: 700;
   letter-spacing: -0.03em;
   margin-bottom: 8px;
-  /* no entrance animation */
 }
 .blog-list { display: flex; flex-direction: column; gap: 12px; }
 
@@ -327,6 +309,50 @@ a:hover { opacity: 0.75; }
 .blog-date { font-size: 12px; color: var(--muted); font-family: var(--mono); }
 .blog-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 10px; letter-spacing: -0.01em; }
 .blog-read { font-size: 13px; color: var(--accent); }
+
+/* ── Post reader ─────────────────────────────────────────────────────── */
+.post-reader {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 100px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 40px;
+  transition: color var(--transition);
+}
+.back-btn:hover { color: var(--accent); }
+.post-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text);
+}
+.post-body h1 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 24px; }
+.post-body h2 { font-size: 1.2rem; font-weight: 600; margin: 40px 0 12px; color: var(--text); }
+.post-body h3 { font-size: 1rem; font-weight: 600; margin: 28px 0 8px; color: var(--muted); }
+.post-body p { margin-bottom: 16px; max-width: 68ch; }
+.post-body a { color: var(--accent); border-bottom: 1px solid transparent; transition: border-color var(--transition); }
+.post-body a:hover { border-bottom-color: var(--accent); opacity: 1; }
+.post-body code { font-family: var(--mono); background: var(--surface-2); padding: 2px 6px; border-radius: 3px; font-size: 13px; color: var(--accent); }
+.post-body pre { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; overflow-x: auto; margin-bottom: 20px; }
+.post-body pre code { background: none; padding: 0; font-size: 13px; }
+.post-body img { max-width: 100%; border-radius: var(--radius); margin: 20px 0; }
+.post-body blockquote { border-left: 2px solid var(--accent); padding-left: 16px; color: var(--muted); margin: 20px 0; }
+.post-body ul, .post-body ol { padding-left: 20px; margin-bottom: 16px; }
+.post-body li { margin-bottom: 6px; }
+.post-body hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+/* details/summary for the long-read expand */
+.post-body details { margin: 24px 0; }
+.post-body summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; }
+.post-body summary::-webkit-details-marker { display: none; }
 
 /* ── Shared ──────────────────────────────────────────────────────────── */
 .loader { text-align: center; padding: 60px 0; font-size: 14px; color: var(--muted); }
@@ -354,6 +380,6 @@ a:hover { opacity: 0.75; }
 }
 
 @media (max-width: 640px) {
-  .app-container, .blog-page { padding: 28px 16px 60px; }
+  .app-container, .blog-page, .post-reader { padding: 28px 16px 60px; }
   .repo-grid { grid-template-columns: 1fr; }
 }

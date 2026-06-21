@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { marked } from 'marked';
+import sanitizeHtml from 'sanitize-html';
 
 interface PostMeta {
   slug: string;
@@ -16,7 +17,48 @@ const styleColors: Record<string, string> = {
   colorful: '#f72585',
 };
 
-export default function Blog() {
+// ── Post reader (loaded inline via hash, no page navigation) ─────────────────
+function PostReader({ slug, onBack }: { slug: string; onBack: () => void }) {
+  const [html, setHtml] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetch(`/posts/${slug}.md`)
+      .then(r => {
+        if (!r.ok) throw new Error('not found');
+        return r.text();
+      })
+      .then(async md => {
+        const raw = await marked(md);
+        setHtml(sanitizeHtml(raw, {
+          allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'details', 'summary']),
+          allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt', 'width', 'height'], a: ['href', 'target', 'rel'] }
+        }));
+        setLoading(false);
+      })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [slug]);
+
+  return (
+    <div className="post-reader">
+      <button className="back-btn" onClick={onBack}>← Back to blog</button>
+      {loading && <div className="loader">Loading post...</div>}
+      {error && <div className="error">Post not found.</div>}
+      {!loading && !error && (
+        <article
+          className="post-body"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Blog list + inline post router ───────────────────────────────────────────
+export default function Blog({ postSlug }: { postSlug?: string }) {
   const [posts, setPosts] = useState<PostMeta[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,16 +69,15 @@ export default function Blog() {
       .catch(() => setLoading(false));
   }, []);
 
+  // If a slug is passed we're in post-reader mode
+  if (postSlug) {
+    return <PostReader slug={postSlug} onBack={() => { window.location.hash = '#blog'; }} />;
+  }
+
   return (
     <div className="blog-page">
       <header className="blog-header">
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-        >
-          blog.<span className="accent">lai.codes</span>
-        </motion.h1>
+        <h1>blog.<span className="accent">lai.codes</span></h1>
         <p className="subtitle">Notes, projects, and ideas from <a href="https://github.com/tototofu123" target="_blank" rel="noopener noreferrer">@tototofu123</a></p>
       </header>
 
@@ -46,15 +87,12 @@ export default function Blog() {
         <div className="no-results">No posts yet — check back soon.</div>
       )}
 
-      <motion.div layout className="blog-list">
-        {posts.map((post, i) => (
-          <motion.a
+      <div className="blog-list">
+        {posts.map(post => (
+          <a
             key={post.slug}
-            href={`/posts/${post.slug}.html`}
+            href={`#blog/${post.slug}`}
             className="blog-card"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.4 }}
           >
             <div className="blog-card-top">
               <span
@@ -66,9 +104,9 @@ export default function Blog() {
             </div>
             <h2 className="blog-title">{post.title}</h2>
             <span className="blog-read">Read post →</span>
-          </motion.a>
+          </a>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

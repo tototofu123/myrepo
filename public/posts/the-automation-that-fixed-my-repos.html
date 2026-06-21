@@ -41,6 +41,7 @@
       padding: 3rem 1.5rem 6rem;
     }
 
+    /* Back → blogs screen */
     .back {
       font-family: var(--font-ui);
       font-size: 0.8125rem;
@@ -115,38 +116,72 @@
       color: var(--accent);
     }
 
-    .short-read { }
+    /* ── Short read + fade ── */
+    .short-read-wrap {
+      position: relative;
+    }
 
+    /* The clamp: shows roughly first paragraph, fades the rest */
+    .short-read {
+      max-height: 8.5rem;   /* ~first paragraph visible */
+      overflow: hidden;
+      transition: max-height 0.5s ease;
+    }
+    .short-read.expanded {
+      max-height: 600px;
+    }
+
+    /* Gradient fade at the bottom of the clipped text */
+    .short-read-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 5rem;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .short-read-fade.hidden { opacity: 0; }
+
+    /* ── Read more button ── */
     .long-read-toggle {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.6rem;
+      width: 100%;
       font-family: var(--font-ui);
-      font-size: 0.8125rem;
+      font-size: 1.0625rem;   /* same as body — clearly readable */
+      font-weight: 500;
       color: var(--muted);
       cursor: pointer;
       background: none;
       border: none;
-      padding: 0.75rem 0;
-      margin: 1.5rem 0 0;
+      padding: 1.25rem 0 0.75rem;
+      margin-top: 0.5rem;
       transition: color 0.18s;
       user-select: none;
+      letter-spacing: 0.01em;
     }
     .long-read-toggle:hover { color: var(--text); }
     .long-read-toggle .arrow {
       display: inline-block;
+      font-size: 1.3em;
+      line-height: 1;
       transition: transform 0.3s ease;
     }
     .long-read-toggle.open .arrow { transform: rotate(180deg); }
 
+    /* ── Long read ── */
     .long-read {
       overflow: hidden;
       max-height: 0;
       opacity: 0;
-      transition: max-height 0.5s ease, opacity 0.4s ease;
+      transition: max-height 0.55s ease, opacity 0.4s ease;
     }
     .long-read.open {
-      max-height: 4000px;
+      max-height: 5000px;
       opacity: 1;
     }
 
@@ -183,7 +218,8 @@
 <body>
   <div class="wrap">
 
-    <a href="/" class="back">
+    <!-- Back to blogs screen -->
+    <a href="/blog" class="back">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       repo.lai.codes
     </a>
@@ -203,12 +239,17 @@
 
     <hr class="divider" />
 
-    <div class="short-read">
-      <p>The idea was to build something that takes a public document link, fetches whatever is inside it, and hands the content off for processing. Google Docs, Notion pages, GitHub READMEs, whatever is publicly accessible. The goal was to stop doing that manually.</p>
-      <p>Before any of that got built though, the conversation went somewhere else. The same session turned into a live audit of my GitHub profile. Turns out I had 21 public repositories, not the 10 or so I thought were there. Each one got checked for a proper description, topic tags, and a homepage URL. Most were already in good shape. The ones that were not got updated on the spot.</p>
-      <p>So this covers both things. The document fetching idea that kicked things off, and the GitHub cleanup that happened before a single line of code was written.</p>
+    <!-- Short read with fade -->
+    <div class="short-read-wrap">
+      <div class="short-read" id="short-read">
+        <p>The idea was to build something that takes a public document link, fetches whatever is inside it, and hands the content off for processing. Google Docs, Notion pages, GitHub READMEs, whatever is publicly accessible. The goal was to stop doing that manually.</p>
+        <p>Before any of that got built though, the conversation went somewhere else. The same session turned into a live audit of my GitHub profile. Turns out I had 21 public repositories, not the 10 or so I thought were there. Each one got checked for a proper description, topic tags, and a homepage URL. Most were already in good shape. The ones that were not got updated on the spot.</p>
+        <p>So this covers both things. The document fetching idea that kicked things off, and the GitHub cleanup that happened before a single line of code was written.</p>
+      </div>
+      <div class="short-read-fade" id="short-fade"></div>
     </div>
 
+    <!-- Read more — centred, big, obvious -->
     <button class="long-read-toggle" id="toggle" aria-expanded="false" aria-controls="long-read">
       <span class="arrow">&#8964;</span>
       <span id="toggle-label">Read more &nbsp;&middot;&nbsp; ~3 min</span>
@@ -249,14 +290,21 @@
   </div>
 
   <script>
-    const btn = document.getElementById('toggle');
+    const btn    = document.getElementById('toggle');
     const region = document.getElementById('long-read');
-    const label = document.getElementById('toggle-label');
+    const label  = document.getElementById('toggle-label');
+    const shortR = document.getElementById('short-read');
+    const fade   = document.getElementById('short-fade');
+
     btn.addEventListener('click', () => {
       const open = region.classList.toggle('open');
       btn.classList.toggle('open', open);
       btn.setAttribute('aria-expanded', open);
       label.textContent = open ? 'Show less' : 'Read more \u00a0\u00b7\u00a0 ~3 min';
+
+      // expand short-read fully and kill fade when opened
+      shortR.classList.toggle('expanded', open);
+      fade.classList.toggle('hidden', open);
     });
   </script>
 </body>

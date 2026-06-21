@@ -1,9 +1,8 @@
 name: Queue Blog Post
 
 # Triggers when 'blog-post' label is added to an issue.
-# Validates format, checks today's publish count, then either
-# immediately schedules (adds blog-queued label) or comments that
-# the post will be held until the next available slot.
+# Validates format, calculates the estimated publish date from queue
+# position, then comments with the exact scheduled date/time (HKT).
 
 on:
   issues:
@@ -60,7 +59,7 @@ jobs:
         env:
           REASON: ${{ steps.validate.outputs.REASON }}
 
-      - name: Check queue depth and today's publish count
+      - name: Calculate queue position and estimated publish date
         if: steps.validate.outputs.VALID == 'true'
         id: check
         uses: actions/github-script@v7
@@ -68,25 +67,23 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Current HKT date (UTC+8)
+            // HKT = UTC+8
             const now = new Date(Date.now() + 8 * 3600 * 1000);
-            const todayHKT = now.toISOString().slice(0, 10); // YYYY-MM-DD
-            const dayOfWeek = now.getUTCDay(); // 0=Sun,6=Sat
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const todayHKT = now.toISOString().slice(0, 10);
+            const dayOfWeek = now.getUTCDay(); // 0=Sun, 6=Sat
 
-            // Read index.json to count posts published today
+            // Read index.json to count posts already published today
             let posts = [];
             try {
               posts = JSON.parse(fs.readFileSync('public/posts/index.json', 'utf8'));
             } catch {}
 
-            // index.json stores dates as "June 21, 2026" — normalise to YYYY-MM-DD for comparison
-            function parseDate(d) {
+            function isoDate(d) {
               try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
             }
-            const publishedToday = posts.filter(p => parseDate(p.date) === todayHKT).length;
+            const publishedToday = posts.filter(p => isoDate(p.date) === todayHKT).length;
 
-            // Count queued issues (open + blog-queued label, excluding this one)
+            // Count already-queued issues (not including this one yet)
             const { data: queuedIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -94,33 +91,72 @@ jobs:
               state: 'open',
               per_page: 100
             });
-            const queueDepth = queuedIssues.length; // not counting this issue yet
+            // Sort oldest first so position is meaningful
+            queuedIssues.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const queueDepth = queuedIssues.length; // before adding this issue
 
-            // Determine today's limit
-            // Weekend: 2 if queue (after adding this) >= 3, else 1
-            // Weekday: always 1
-            const projectedQueue = queueDepth + 1;
-            const todayLimit = isWeekend && projectedQueue >= 3 ? 2 : 1;
+            // ── Estimate publish date ──────────────────────────────────────
+            // Walk forward day by day from today, filling slots (1 weekday,
+            // 2 on weekend if total projected queue >= 3), until we place
+            // this issue's position in the queue.
+            //
+            // "slotsRemaining" tracks how many of today's slots are still free.
+            const projectedTotal = queueDepth + 1; // including this issue
+            function slotsForDay(jsDay, totalQueueOnThatDay) {
+              // jsDay: 0=Sun,6=Sat
+              const isWknd = jsDay === 0 || jsDay === 6;
+              return isWknd && totalQueueOnThatDay >= 3 ? 2 : 1;
+            }
 
-            core.setOutput('published_today', String(publishedToday));
-            core.setOutput('today_limit', String(todayLimit));
+            let slotsUsedToday = publishedToday;
+            let todaySlots = slotsForDay(dayOfWeek, projectedTotal);
+            let positionLeft = queueDepth + 1; // this issue is at position queueDepth+1
+            let cursor = new Date(now); // starts at today HKT midnight conceptually
+            let estimatedDate = null;
+
+            for (let d = 0; d < 365; d++) {
+              const dow = cursor.getUTCDay();
+              const slots = d === 0
+                ? todaySlots - slotsUsedToday   // today: remaining slots only
+                : slotsForDay(dow, Math.max(0, positionLeft)); // future days
+              const available = Math.max(0, slots);
+              if (positionLeft <= available) {
+                estimatedDate = new Date(cursor);
+                break;
+              }
+              positionLeft -= available;
+              cursor = new Date(cursor.getTime() + 24 * 3600 * 1000);
+            }
+
+            // Format date as "Mon 23 Jun 2026"
+            function formatDate(d) {
+              return d.toLocaleDateString('en-GB', {
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                timeZone: 'UTC'
+              });
+            }
+
+            const estimatedDisplay = estimatedDate ? formatDate(estimatedDate) : 'TBD';
+            const isToday = estimatedDate
+              ? estimatedDate.toISOString().slice(0, 10) === todayHKT
+              : false;
+
             core.setOutput('queue_depth', String(queueDepth));
-            core.setOutput('today_hkt', todayHKT);
-            core.setOutput('slot_available', publishedToday < todayLimit ? 'true' : 'false');
+            core.setOutput('estimated_date', estimatedDisplay);
+            core.setOutput('is_today', String(isToday));
 
       - name: Add blog-queued label
         if: steps.validate.outputs.VALID == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            // Ensure the label exists
             await github.rest.issues.createLabel({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'blog-queued',
               color: 'e4e669',
               description: 'Blog post queued for scheduled publishing'
-            }).catch(() => {}); // ignore if already exists
+            }).catch(() => {});
 
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
@@ -129,31 +165,22 @@ jobs:
               labels: ['blog-queued']
             });
 
-      - name: Comment — queued for later
-        if: steps.validate.outputs.VALID == 'true' && steps.check.outputs.slot_available == 'false'
+      - name: Comment — confirmed with estimated publish date
+        if: steps.validate.outputs.VALID == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const queueDepth = parseInt(process.env.QUEUE_DEPTH) + 1;
-            // Estimate days until slot: naive (queue / 1 per day)
-            const daysUntil = Math.ceil(queueDepth / 1);
+            const isToday = process.env.IS_TODAY === 'true';
+            const date = process.env.ESTIMATED_DATE;
+            const when = isToday
+              ? `today, **${date}**`
+              : `**${date}**`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: `🕐 **Queued** — today's publishing slot is already filled.\n\nThis post is #${queueDepth} in the queue and will be published at **12:00 HKT** on the next available day. The scheduler runs daily and will pick up the oldest queued post automatically.`
+              body: `✅ **Validated and queued.**\n\nThis post is scheduled to publish on ${when} at **12:00 HKT**.`
             });
         env:
-          QUEUE_DEPTH: ${{ steps.check.outputs.queue_depth }}
-
-      - name: Comment — will publish today at noon
-        if: steps.validate.outputs.VALID == 'true' && steps.check.outputs.slot_available == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `✅ **Validated and queued for today.**\n\nThis post will be published at **12:00 HKT** today by the scheduled workflow.`
-            });
+          IS_TODAY: ${{ steps.check.outputs.is_today }}
+          ESTIMATED_DATE: ${{ steps.check.outputs.estimated_date }}

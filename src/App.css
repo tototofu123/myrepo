@@ -1,3 +1,10 @@
+/* ── @property for animatable angle ─────────────────────────────────── */
+@property --glow-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 /* ── Reset & tokens ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,8 +19,11 @@
   --accent: #a8ff78;
   --font: 'Inter', sans-serif;
   --mono: 'JetBrains Mono', monospace;
-  --radius: 8px;
+  --radius: 4px;          /* ← changed from 8px */
   --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* glow colours: accent teal-green + a soft white */
+  --glow-1: #a8ff78;
+  --glow-2: #00e5ff;
 }
 
 html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
@@ -60,6 +70,7 @@ a:hover { opacity: 0.75; }
   letter-spacing: -0.03em;
   line-height: 1.1;
   margin-bottom: 10px;
+  /* no entrance animation */
 }
 .accent { color: var(--accent); }
 .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
@@ -88,21 +99,175 @@ a:hover { opacity: 0.75; }
   gap: 16px;
 }
 
+/* ── Glow card base (shared by repo-card + blog-card) ────────────────── */
+/*
+  Technique: two pseudo-elements sized slightly larger than the card via
+  negative inset. Both carry a rotating conic-gradient keyed on --glow-angle.
+  ::before  = sharp border layer  (z-index -1)
+  ::after   = blurred glow halo   (z-index -2)
+  Animation only starts on :hover (paused otherwise).
+  On :active the card background brightens → "lights up" effect.
+  Reference: lionel-peramo.com/posts/high-performance-animated-glow-border-css/
+           + Theodore L. @property technique (LinkedIn / theosoti.com)
+*/
+
 /* ── Repo card ───────────────────────────────────────────────────────── */
 .repo-card {
+  position: relative;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;                        /* border handled by pseudo ::before */
   border-radius: var(--radius);
   cursor: pointer;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  overflow: hidden;
+  /* NO entrance/appear animation */
+  transition: background var(--transition);
+  overflow: visible;                   /* let glow escape edges */
+  isolation: isolate;
 }
-.repo-card:hover {
-  border-color: #333;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-}
-.repo-card.expanded { border-color: var(--accent); }
 
+/* Clip the inner content so the pseudo glow sits outside */
+.repo-card .card-main,
+.repo-card .card-details {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+/* top card section gets full radius, details only bottom */
+.repo-card .card-main { border-radius: var(--radius) var(--radius) 0 0; }
+.repo-card .card-details { border-radius: 0 0 var(--radius) var(--radius); }
+
+/* Thin static border — visible at rest */
+.repo-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--glow-1) 60deg,
+    var(--glow-2) 120deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  z-index: -1;
+  animation: glow-spin 3s linear infinite;
+  animation-play-state: paused;        /* only runs on hover */
+  opacity: 0;                          /* invisible at rest */
+  transition: opacity 300ms ease;
+}
+
+/* Blurred glow halo behind — further back */
+.repo-card::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--radius) + 4px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--glow-1) 60deg,
+    var(--glow-2) 120deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  z-index: -2;
+  filter: blur(10px);
+  animation: glow-spin 3s linear infinite;
+  animation-play-state: paused;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+/* Hover: start spinning, fade in glow */
+.repo-card:hover::before,
+.repo-card:hover::after {
+  animation-play-state: running;
+  opacity: 1;
+}
+
+/* Click / active: brighten the whole card surface */
+.repo-card:active .card-main,
+.repo-card:active .card-details {
+  background: #242424;                 /* slightly lighter than --surface */
+}
+
+/* Expanded state keeps a static accent outline */
+.repo-card.expanded::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+/* ── Blog card ───────────────────────────────────────────────────────── */
+.blog-card {
+  position: relative;
+  display: block;
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  color: var(--text);
+  isolation: isolate;
+  /* NO entrance/appear animation */
+  transition: background var(--transition);
+  overflow: visible;
+}
+
+/* Same glow pseudo pattern */
+.blog-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--glow-1) 60deg,
+    var(--glow-2) 120deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  z-index: -1;
+  animation: glow-spin 3s linear infinite;
+  animation-play-state: paused;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.blog-card::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--radius) + 4px);
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--glow-1) 60deg,
+    var(--glow-2) 120deg,
+    transparent 180deg,
+    transparent 360deg
+  );
+  z-index: -2;
+  filter: blur(10px);
+  animation: glow-spin 3s linear infinite;
+  animation-play-state: paused;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.blog-card:hover::before,
+.blog-card:hover::after {
+  animation-play-state: running;
+  opacity: 1;
+}
+.blog-card:active {
+  background: #242424;
+}
+
+/* ── Glow keyframe ───────────────────────────────────────────────────── */
+@keyframes glow-spin {
+  to { --glow-angle: 360deg; }
+}
+
+/* ── Card inner content ──────────────────────────────────────────────── */
 .card-main { padding: 18px 20px 16px; }
 .card-top h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .website-row { margin-bottom: 8px; }
@@ -136,7 +301,7 @@ a:hover { opacity: 0.75; }
   display: inline-flex; align-items: center; gap: 6px;
   margin-top: 16px; font-size: 13px; font-weight: 500;
   color: var(--bg); background: var(--accent);
-  padding: 8px 16px; border-radius: 6px;
+  padding: 8px 16px; border-radius: 4px;
   transition: opacity var(--transition);
 }
 .github-button:hover { opacity: 0.85; }
@@ -153,22 +318,10 @@ a:hover { opacity: 0.75; }
   font-weight: 700;
   letter-spacing: -0.03em;
   margin-bottom: 8px;
+  /* no entrance animation */
 }
 .blog-list { display: flex; flex-direction: column; gap: 12px; }
-.blog-card {
-  display: block;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  color: var(--text);
-}
-.blog-card:hover {
-  border-color: #333;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  opacity: 1;
-}
+
 .blog-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .blog-style-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .blog-date { font-size: 12px; color: var(--muted); font-family: var(--mono); }
@@ -188,6 +341,17 @@ a:hover { opacity: 0.75; }
   transition: border-color var(--transition);
 }
 .scroll-top:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Reduced motion fallback ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .repo-card::before, .repo-card::after,
+  .blog-card::before, .blog-card::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .repo-card:hover { box-shadow: 0 0 0 1px var(--accent); }
+  .blog-card:hover { box-shadow: 0 0 0 1px var(--accent); }
+}
 
 @media (max-width: 640px) {
   .app-container, .blog-page { padding: 28px 16px 60px; }

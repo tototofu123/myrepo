@@ -1,0 +1,140 @@
+name: Publish Queued Blog Posts
+
+# Runs daily at 04:00 UTC = 12:00 HKT.
+# Picks the oldest open issue(s) with label 'blog-queued',
+# generates the post HTML from its markdown body,
+# commits to main, updates index.json with today's live date,
+# then comments + closes the issue.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # 12:00 HKT every day
+  workflow_dispatch:       # allow manual trigger for testing
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine how many posts to publish today
+        id: slots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // HKT = UTC+8
+            const now = new Date(Date.now() + 8 * 3600 * 1000);
+            const todayHKT = now.toISOString().slice(0, 10);
+            const todayDisplay = now.toLocaleDateString('en-US', {
+              year: 'numeric', month: 'long', day: 'numeric',
+              timeZone: 'Asia/Hong_Kong'
+            });
+            const dayOfWeek = now.getUTCDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+            // Count queued issues
+            const { data: queuedIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'blog-queued',
+              state: 'open',
+              per_page: 100
+            });
+
+            // Sort oldest first (by created_at)
+            queuedIssues.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            const queueDepth = queuedIssues.length;
+            // Weekend bonus: 2 slots if queue >= 3, otherwise 1
+            const slots = isWeekend && queueDepth >= 3 ? 2 : 1;
+            const toPublish = queuedIssues.slice(0, slots);
+
+            core.setOutput('today_hkt', todayHKT);
+            core.setOutput('today_display', todayDisplay);
+            core.setOutput('issues', JSON.stringify(toPublish.map(i => ({
+              number: i.number,
+              title: i.title,
+              body: i.body || ''
+            }))));
+            core.setOutput('count', String(toPublish.length));
+
+      - name: Exit early if nothing queued
+        if: steps.slots.outputs.count == '0'
+        run: |
+          echo "No queued posts today. Exiting."
+
+      - name: Set up Python
+        if: steps.slots.outputs.count != '0'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        if: steps.slots.outputs.count != '0'
+        run: pip install markdown
+
+      - name: Generate posts
+        if: steps.slots.outputs.count != '0'
+        env:
+          ISSUES_JSON: ${{ steps.slots.outputs.issues }}
+          PUBLISH_DATE_ISO: ${{ steps.slots.outputs.today_hkt }}
+          PUBLISH_DATE_DISPLAY: ${{ steps.slots.outputs.today_display }}
+        run: |
+          python3 .github/scripts/generate_post.py
+
+      - name: Commit generated files
+        if: steps.slots.outputs.count != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/posts/
+          git diff --cached --quiet || git commit -m "blog: publish scheduled posts for ${{ steps.slots.outputs.today_hkt }}"
+          git push
+
+      - name: Comment and close published issues
+        if: steps.slots.outputs.count != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = JSON.parse(process.env.ISSUES_JSON);
+            const displayDate = process.env.TODAY_DISPLAY;
+
+            for (const issue of issues) {
+              const slug = issue.title
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '');
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `🚀 **Published on ${displayDate}**\n\nLive at: https://repo.lai.codes/#blog/${slug}`
+              });
+
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name: 'blog-queued'
+              }).catch(() => {});
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+            }
+        env:
+          ISSUES_JSON: ${{ steps.slots.outputs.issues }}
+          TODAY_DISPLAY: ${{ steps.slots.outputs.today_display }}

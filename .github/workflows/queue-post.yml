@@ -1,0 +1,159 @@
+name: Queue Blog Post
+
+# Triggers when 'blog-post' label is added to an issue.
+# Validates format, checks today's publish count, then either
+# immediately schedules (adds blog-queued label) or comments that
+# the post will be held until the next available slot.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  queue:
+    if: github.event.label.name == 'blog-post'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate issue format
+        id: validate
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          if [ -z "$ISSUE_TITLE" ]; then
+            echo "VALID=false" >> $GITHUB_OUTPUT
+            echo "REASON=Issue title is empty." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          if [ ${#ISSUE_BODY} -lt 50 ]; then
+            echo "VALID=false" >> $GITHUB_OUTPUT
+            echo "REASON=Issue body is too short (minimum 50 characters of content)." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "VALID=true" >> $GITHUB_OUTPUT
+
+      - name: Comment validation failure and exit
+        if: steps.validate.outputs.VALID == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `❌ **Blog post validation failed**\n\n${process.env.REASON}\n\nFix the issue and re-add the \`blog-post\` label to retry.`
+            });
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: 'blog-post'
+            }).catch(() => {});
+        env:
+          REASON: ${{ steps.validate.outputs.REASON }}
+
+      - name: Check queue depth and today's publish count
+        if: steps.validate.outputs.VALID == 'true'
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Current HKT date (UTC+8)
+            const now = new Date(Date.now() + 8 * 3600 * 1000);
+            const todayHKT = now.toISOString().slice(0, 10); // YYYY-MM-DD
+            const dayOfWeek = now.getUTCDay(); // 0=Sun,6=Sat
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+            // Read index.json to count posts published today
+            let posts = [];
+            try {
+              posts = JSON.parse(fs.readFileSync('public/posts/index.json', 'utf8'));
+            } catch {}
+
+            // index.json stores dates as "June 21, 2026" — normalise to YYYY-MM-DD for comparison
+            function parseDate(d) {
+              try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
+            }
+            const publishedToday = posts.filter(p => parseDate(p.date) === todayHKT).length;
+
+            // Count queued issues (open + blog-queued label, excluding this one)
+            const { data: queuedIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'blog-queued',
+              state: 'open',
+              per_page: 100
+            });
+            const queueDepth = queuedIssues.length; // not counting this issue yet
+
+            // Determine today's limit
+            // Weekend: 2 if queue (after adding this) >= 3, else 1
+            // Weekday: always 1
+            const projectedQueue = queueDepth + 1;
+            const todayLimit = isWeekend && projectedQueue >= 3 ? 2 : 1;
+
+            core.setOutput('published_today', String(publishedToday));
+            core.setOutput('today_limit', String(todayLimit));
+            core.setOutput('queue_depth', String(queueDepth));
+            core.setOutput('today_hkt', todayHKT);
+            core.setOutput('slot_available', publishedToday < todayLimit ? 'true' : 'false');
+
+      - name: Add blog-queued label
+        if: steps.validate.outputs.VALID == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Ensure the label exists
+            await github.rest.issues.createLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'blog-queued',
+              color: 'e4e669',
+              description: 'Blog post queued for scheduled publishing'
+            }).catch(() => {}); // ignore if already exists
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['blog-queued']
+            });
+
+      - name: Comment — queued for later
+        if: steps.validate.outputs.VALID == 'true' && steps.check.outputs.slot_available == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const queueDepth = parseInt(process.env.QUEUE_DEPTH) + 1;
+            // Estimate days until slot: naive (queue / 1 per day)
+            const daysUntil = Math.ceil(queueDepth / 1);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🕐 **Queued** — today's publishing slot is already filled.\n\nThis post is #${queueDepth} in the queue and will be published at **12:00 HKT** on the next available day. The scheduler runs daily and will pick up the oldest queued post automatically.`
+            });
+        env:
+          QUEUE_DEPTH: ${{ steps.check.outputs.queue_depth }}
+
+      - name: Comment — will publish today at noon
+        if: steps.validate.outputs.VALID == 'true' && steps.check.outputs.slot_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ **Validated and queued for today.**\n\nThis post will be published at **12:00 HKT** today by the scheduled workflow.`
+            });

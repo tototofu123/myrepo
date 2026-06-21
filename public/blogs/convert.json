@@ -1,5 +1,5 @@
 {
-  "_doc": "convert.json — myrepo Blog MD→HTML Conversion Spec v2",
+  "_doc": "convert.json — myrepo Blog MD→HTML Conversion Spec v3",
   "_description": "This file is the single source of truth for how Markdown written in a GitHub Issue is converted to a styled HTML blog post. generate-blog.js reads the Frontmatter and Content sections. blog-styles.css provides all visual styling. Update this file whenever the spec changes — the script and styles should stay in sync with it.",
   "_workflow": "GitHub Issue body → generate-blog.js parses this spec → writes /blogs/<slug>/<slug>.html",
 
@@ -13,40 +13,93 @@
   "frontmatter": {
     "_comment": "YAML block delimited by --- at the top of the issue body",
     "fields": {
-      "title":   { "type": "string",         "required": true,  "example": "My STM32 UART Journey" },
-      "slug":    { "type": "string",         "required": true,  "example": "my-stm32-uart-journey", "rules": "lowercase, hyphens only, no spaces" },
-      "date":    { "type": "YYYY-MM-DD",     "required": true,  "example": "2026-05-23" },
-      "summary": { "type": "string",         "required": false, "example": "A deep-dive into baud rate mismatches" },
-      "tags":    { "type": "array|string",   "required": false, "example": "[embedded, stm32, uart]" }
+      "title":            { "type": "string",       "required": true,  "example": "My STM32 UART Journey" },
+      "slug":             { "type": "string",       "required": true,  "example": "my-stm32-uart-journey", "rules": "lowercase, hyphens only, no spaces" },
+      "date":             { "type": "YYYY-MM-DD",   "required": true,  "example": "2026-05-23" },
+      "summary":          { "type": "string",       "required": false, "example": "A deep-dive into baud rate mismatches" },
+      "tags":             { "type": "array|string", "required": false, "example": "[embedded, stm32, uart]" },
+      "image":            { "type": "url",          "required": false, "example": "https://images.unsplash.com/photo-xxx?w=1200&q=80", "rules": "Hero image URL. Prefer real online sources (Unsplash, official screenshots). AI-generated only as last resort." },
+      "image_credit":     { "type": "string",       "required": false, "example": "Gabriel Heinzer on Unsplash", "rules": "Human-readable credit label. Required when image is set and sourced externally." },
+      "image_credit_url": { "type": "url",          "required": false, "example": "https://unsplash.com/photos/VieM9BdZKFo", "rules": "Link target for the credit label. Required when image_credit is set." }
     },
-    "exampleBlock": "---\ntitle: \"My STM32 UART Journey\"\nslug: \"my-stm32-uart-journey\"\ndate: \"2026-05-23\"\nsummary: \"Debugging baud rate mismatches on the STM32F103.\"\ntags: [embedded, stm32, uart]\n---"
+    "imageRules": {
+      "preferenceOrder": [
+        "1. Real URL from a credible online source (Unsplash, official product screenshot, news outlet, etc.)",
+        "2. Screenshot taken during the work being described",
+        "3. AI-generated — only if no real source is found; must include prompt in img-credit"
+      ],
+      "creditRequirement": "All externally sourced images MUST have image_credit + image_credit_url set in frontmatter. AI-generated images must use the img-credit paragraph pattern in the post body.",
+      "citationStyle": "Inline citations in post body use [1] [2] superscript notation, resolved in a References section at the end of the long-read."
+    },
+    "exampleBlock": "---\ntitle: \"My STM32 UART Journey\"\nslug: \"my-stm32-uart-journey\"\ndate: \"2026-05-23\"\nsummary: \"Debugging baud rate mismatches on the STM32F103.\"\ntags: [embedded, stm32, uart]\nimage: \"https://images.unsplash.com/photo-xxx?w=1200&q=80\"\nimage_credit: \"Gabriel Heinzer on Unsplash\"\nimage_credit_url: \"https://unsplash.com/photos/VieM9BdZKFo\"\n---"
+  },
+
+  "postStructure": {
+    "_comment": "Every post MUST follow this two-layer structure: short read first, long read collapsed below.",
+    "layers": {
+      "shortRead": {
+        "description": "The first 2–3 paragraphs. Summary of what happened and why it matters. Target read time: 30–60 seconds.",
+        "rules": [
+          "Lead with what was built or discovered — no preamble",
+          "No subheadings inside the short read section",
+          "Must stand alone — reader should understand the core story without expanding"
+        ],
+        "htmlWrapper": "<section class=\"short-read\"> ... </section>"
+      },
+      "longRead": {
+        "description": "The full technical detail. Greyed out and collapsed by default. Reader clicks to expand. Target additional read time: 2–3 minutes.",
+        "rules": [
+          "Starts after the visual expand trigger (three animated dots pill)",
+          "Can use subheadings (## H2, ### H3)",
+          "Code blocks, tables, images with captions allowed",
+          "Inline citations [1] [2] go here — resolved in a References section at the very end",
+          "References section is the last element inside long-read"
+        ],
+        "htmlWrapper": "<section class=\"long-read\" id=\"long-read\"> ... </section>",
+        "triggerHtml": "Three-dot animated pill button between short-read and long-read sections (see pageShell.expandTrigger)"
+      }
+    },
+    "markdownConvention": {
+      "shortReadMarker": "Write the first 2–3 paragraphs as plain prose (no special marker needed — generator treats everything before the first ## as short-read)",
+      "longReadMarker": "Place a literal line containing only `<!-- more -->` after the short-read paragraphs to tell the generator where the long-read begins",
+      "referencesSection": "Use `## References` as the final heading inside long-read. Generator converts it to an <ol> list of credited URLs."
+    }
+  },
+
+  "tone": {
+    "style": "Technical but approachable — assumes the reader knows what code is, but does not assume domain expertise",
+    "avoid": ["Academic language", "Excessive jargon without explanation", "Marketing speak"],
+    "prefer": ["Plain declarative sentences", "Show what happened then explain why", "Short paragraphs"]
   },
 
   "markdownToHtml": {
     "_comment": "Rules the generate-blog.js script follows when converting Markdown prose to HTML. Every output element uses a CSS class from blog-styles.css.",
     "processingOrder": [
       "1. Strip frontmatter block (everything before and including the second ---)",
-      "2. Fenced code blocks  (``` ... ```)  →  FIRST, before inline rules touch the content",
-      "3. ATX Headings  (# ## ### #### ##### ######)",
-      "4. Bold + italic  (*** ** *)",
-      "5. Inline code  (` ... `)",
-      "6. Images with caption  (![alt](src) + *caption* on next line)  →  <figure>",
-      "7. Plain images  ![alt](src)  →  <img>",
-      "8. Hyperlinks  [text](url)  →  <a>",
-      "9. Blockquotes  (> ...)",
-      "10. Horizontal rules  (---)",
-      "11. GFM tables  (| col | col |)",
-      "12. Unordered lists  (- / * / +)",
-      "13. Ordered lists  (1. 2. 3.)",
-      "14. Remaining lines with content  →  <p>"
+      "2. Split on <!-- more --> — everything before = short-read, everything after = long-read",
+      "3. Fenced code blocks  (``` ... ```)  →  FIRST, before inline rules touch the content",
+      "4. ATX Headings  (# ## ### #### ##### ######)",
+      "5. Bold + italic  (*** ** *)",
+      "6. Inline code  (` ... `)",
+      "7. Images with caption  (![alt](src) + *caption* on next line)  →  <figure>",
+      "8. Plain images  ![alt](src)  →  <img>",
+      "9. Hyperlinks  [text](url)  →  <a>",
+      "10. Blockquotes  (> ...)",
+      "11. Horizontal rules  (---)",
+      "12. GFM tables  (| col | col |)",
+      "13. Unordered lists  (- / * / +)",
+      "14. Ordered lists  (1. 2. 3.)",
+      "15. Superscript citations  [1] [2]  →  <sup><a href=\"#ref-N\">[N]</a></sup>",
+      "16. ## References heading + list  →  <section class=\"references\"><ol> ... </ol></section>",
+      "17. Remaining lines with content  →  <p>"
     ],
 
     "elements": {
       "headings": {
-        "h1": { "md": "# Text",   "html": "<h1>Text</h1>",   "cssClass": "post-body h1", "notes": "Only one H1 per post; use sparingly inside body" },
-        "h2": { "md": "## Text",  "html": "<h2>Text</h2>",   "cssClass": "post-body h2", "notes": "Main section divider" },
-        "h3": { "md": "### Text", "html": "<h3>Text</h3>",   "cssClass": "post-body h3", "notes": "Sub-section" },
-        "h4": { "md": "#### Text","html": "<h4>Text</h4>",   "cssClass": "post-body h4" },
+        "h1": { "md": "# Text",    "html": "<h1>Text</h1>",   "cssClass": "post-body h1", "notes": "Only one H1 per post; use sparingly inside body" },
+        "h2": { "md": "## Text",   "html": "<h2>Text</h2>",   "cssClass": "post-body h2", "notes": "Main section divider" },
+        "h3": { "md": "### Text",  "html": "<h3>Text</h3>",   "cssClass": "post-body h3", "notes": "Sub-section" },
+        "h4": { "md": "#### Text", "html": "<h4>Text</h4>",   "cssClass": "post-body h4" },
         "h5": { "md": "##### Text","html": "<h5>Text</h5>",   "cssClass": "post-body h5" },
         "h6": { "md": "###### Text","html": "<h6>Text</h6>",  "cssClass": "post-body h6" }
       },
@@ -56,29 +109,37 @@
         "italic":     { "md": "*text*",     "html": "<em>text</em>" }
       },
       "code": {
-        "inline":  { "md": "`code`",            "html": "<code>code</code>",               "cssClass": "post-body code" },
+        "inline":  { "md": "`code`",            "html": "<code>code</code>",                                    "cssClass": "post-body code" },
         "fenced":  { "md": "```lang\ncode\n```", "html": "<pre><code class=\"language-lang\">code</code></pre>", "cssClass": "post-body pre", "notes": "lang attribute preserved for future syntax highlighter" }
       },
       "links":        { "md": "[label](url)",        "html": "<a href=\"url\" target=\"_blank\" rel=\"noopener\">label</a>", "notes": "All links open in new tab" },
       "images": {
-        "plain":        { "md": "![alt](src)",           "html": "<img src=\"src\" alt=\"alt\" loading=\"lazy\">",                      "cssClass": "post-body img" },
-        "withCaption":  { "md": "![alt](src)\n*caption*", "html": "<figure><img src=\"src\" alt=\"alt\" loading=\"lazy\"><figcaption>caption</figcaption></figure>", "cssClass": "post-body figure" },
+        "plain":       { "md": "![alt](src)",           "html": "<img src=\"src\" alt=\"alt\" loading=\"lazy\">",                                                     "cssClass": "post-body img" },
+        "withCaption": { "md": "![alt](src)\n*caption*", "html": "<figure><img src=\"src\" alt=\"alt\" loading=\"lazy\"><figcaption>caption</figcaption></figure>",   "cssClass": "post-body figure" },
         "aiGenerated": {
           "_note": "When the image is AI-generated, add a .img-credit paragraph immediately after the <img> or inside <figure> after <figcaption>",
           "html": "<figure><img src=\"url\" alt=\"alt\" loading=\"lazy\"><figcaption>caption</figcaption></figure>\n<p class=\"img-credit\">AI-generated &middot; Prompt: \"your prompt here\"</p>",
           "cssStyle": "font-size: 0.6rem; color: var(--color-text-faint); text-align: center; font-style: italic;"
         }
       },
-      "blockquote":   { "md": "> text",               "html": "<blockquote><p>text</p></blockquote>",                               "cssClass": "post-body blockquote" },
-      "hr":           { "md": "---",                   "html": "<hr>",                                                               "cssClass": "post-body hr" },
-      "unorderedList":{ "md": "- item\n- item",        "html": "<ul><li>item</li><li>item</li></ul>",                               "cssClass": "post-body ul" },
-      "orderedList":  { "md": "1. item\n2. item",      "html": "<ol><li>item</li><li>item</li></ol>",                               "cssClass": "post-body ol" },
-      "paragraph":    { "md": "plain text line",       "html": "<p>plain text line</p>",                                           "cssClass": "post-body p" },
+      "blockquote":    { "md": "> text",               "html": "<blockquote><p>text</p></blockquote>",               "cssClass": "post-body blockquote" },
+      "hr":            { "md": "---",                   "html": "<hr>",                                               "cssClass": "post-body hr" },
+      "unorderedList": { "md": "- item\n- item",        "html": "<ul><li>item</li><li>item</li></ul>",                 "cssClass": "post-body ul" },
+      "orderedList":   { "md": "1. item\n2. item",      "html": "<ol><li>item</li><li>item</li></ol>",                 "cssClass": "post-body ol" },
+      "paragraph":     { "md": "plain text line",       "html": "<p>plain text line</p>",                             "cssClass": "post-body p" },
       "table": {
         "md": "| Col A | Col B |\n|-------|-------|\n| val 1 | val 2 |",
         "html": "<table><thead><tr><th>Col A</th><th>Col B</th></tr></thead><tbody><tr><td>val 1</td><td>val 2</td></tr></tbody></table>",
         "cssClass": "post-body table",
         "notes": "Separator row (|---|---| pattern) is stripped; first row becomes <thead>"
+      },
+      "citation": {
+        "inline": { "md": "[1]",  "html": "<sup><a href=\"#ref-1\">[1]</a></sup>", "notes": "Superscript inline citation, links to #ref-N anchor in References section" },
+        "references": {
+          "md": "## References\n- [1] Author, Title. URL",
+          "html": "<section class=\"references\"><h2>References</h2><ol><li id=\"ref-1\"><a href=\"URL\" target=\"_blank\" rel=\"noopener\">Author, Title</a></li></ol></section>",
+          "notes": "Must be last element inside long-read. Each list item gets id=\"ref-N\" for anchor targeting."
+        }
       }
     }
   },
@@ -94,12 +155,20 @@
     "stylesheet": "<link rel=\"stylesheet\" href=\"../blog-styles.css\"> — one level up from /blogs/<slug>/",
     "sections": {
       "siteHeader": "<header class=\"site-header\"> — sticky, blur backdrop, logo + theme toggle + 'All posts' link",
-      "main":       "<main id=\"main-content\"> → <article> → <header class=\"post-header reveal\"> + <hr class=\"post-divider\"> + <div class=\"post-body reveal\">{html content}</div>",
+      "heroImage": "If frontmatter.image is set: <img class=\"hero-img\" src=\"{image}\" alt=\"{title}\" ...> followed by <p class=\"hero-credit\"><a href=\"{image_credit_url}\">{image_credit}</a></p>. Omit both elements if image is not set.",
+      "main":       "<main id=\"main-content\"> → <article> → <header class=\"post-header reveal\"> + <hr class=\"post-divider\"> + short-read section + expand trigger + long-read section",
       "siteFooter": "<footer class=\"site-footer\"> — '← Back to all posts' link"
     },
+    "shortLongReadHtml": {
+      "_comment": "Structure generate-blog.js emits for the two-layer reading experience",
+      "shortRead": "<section class=\"short-read\">{short-read paragraphs}</section>",
+      "expandTrigger": "<button class=\"read-trigger\" id=\"trigger\" aria-label=\"Read full article\" aria-expanded=\"false\" aria-controls=\"long-read\"><div class=\"read-trigger-pill-wrap\"><div class=\"read-trigger-pill\"><span class=\"read-trigger-dot\"></span><span class=\"read-trigger-dot\"></span><span class=\"read-trigger-dot\"></span></div><span class=\"read-trigger-chevron\"></span></div></button>",
+      "longRead": "<section class=\"long-read\" id=\"long-read\" role=\"region\">{long-read content including references}</section>"
+    },
     "scripts": {
-      "themeToggle":  "Inline <script> — reads system preference, sets data-theme on <html>, toggles on button click",
-      "scrollReveal": "Inline <script> — IntersectionObserver on .reveal elements, adds .visible class at 0.1 threshold"
+      "themeToggle":   "Inline <script> — reads system preference, sets data-theme on <html>, toggles on button click",
+      "scrollReveal":  "Inline <script> — IntersectionObserver on .reveal elements, adds .visible class at 0.1 threshold",
+      "expandTrigger": "Inline <script> — clicking #trigger adds .open to #long-read, dismisses trigger with fade-out animation"
     }
   },
 
@@ -110,9 +179,15 @@
     "postTitle":    ".post-title    — <h1> in article header, Instrument Serif display font",
     "postSummary":  ".post-summary  — deck / subtitle below title",
     "postDivider":  ".post-divider  — <hr> between header and body",
+    "shortRead":    ".short-read    — first 2–3 paragraphs, always visible",
+    "longRead":     ".long-read     — collapsed by default, .open class shows it",
+    "readTrigger":  ".read-trigger  — three-dot pill expand button between sections",
     "postBody":     ".post-body     — wrapper div around all converted Markdown HTML",
     "tag":          ".tag           — individual tag badge rendered from frontmatter tags[]",
     "imgCredit":    ".img-credit    — 0.6rem AI-generated attribution line below images",
+    "heroImg":      ".hero-img      — full-width hero image at top of post",
+    "heroCredit":   ".hero-credit   — small credit line below hero image",
+    "references":   ".references    — References section at end of long-read",
     "reveal":       ".reveal        — fade+slide-up on IntersectionObserver, .visible triggers animation"
   },
 
@@ -120,7 +195,11 @@
     "_comment": "public/blogs/index.html is auto-generated/updated by generate-blog.js on each new post",
     "path":        "public/blogs/index.html",
     "stylesheet":  "<link rel=\"stylesheet\" href=\"./blog-styles.css\"> — same level as listing",
-    "entryHtml":   "<li class=\"post-card\"><a href=\"/blogs/{slug}/{slug}.html\"><span class=\"card-date\">{date}</span><span class=\"card-title\">{title}</span><span class=\"card-summary\">{summary}</span></a></li>",
+    "entryHtml": {
+      "_comment": "Card renders hero image when frontmatter.image is set, falls back to no-image card if not",
+      "withImage":    "<li class=\"post-card\"><a href=\"/blogs/{slug}/{slug}.html\"><div class=\"card-img-wrap\"><img src=\"{image}\" alt=\"{title}\" loading=\"lazy\" width=\"600\" height=\"200\"></div><div class=\"card-body\"><span class=\"card-date\">{date}</span><span class=\"card-title\">{title}</span><span class=\"card-summary\">{summary}</span></div></a></li>",
+      "withoutImage": "<li class=\"post-card post-card--no-img\"><a href=\"/blogs/{slug}/{slug}.html\"><span class=\"card-date\">{date}</span><span class=\"card-title\">{title}</span><span class=\"card-summary\">{summary}</span></a></li>"
+    },
     "insertionPoint": "New entries are prepended before </ul> so newest posts appear first"
   },
 
@@ -140,8 +219,8 @@
     "_comment": "How Perplexity (via .perplexity/skills/create-blog.md) must format the issue body to match this spec",
     "issueTitle":  "[blog] {title}",
     "issueLabel":  "blog",
-    "issueBody":   "Frontmatter YAML block (--- ... ---) followed by Markdown content. All fields defined in frontmatter.fields above.",
+    "issueBody":   "Frontmatter YAML block (--- ... ---) followed by Markdown content. Short-read paragraphs first, then <!-- more -->, then long-read content, then ## References.",
     "verifyStep":  "Draft is first saved to Notion /Blogs folder as DRAFT. User reviews and approves before Perplexity creates the GitHub Issue.",
-    "imageRule":   "Hero/inline images: either generate_image (add .img-credit attribution line) or search_web URL with source credit in figcaption. Never hallucinate URLs."
+    "imageRule":   "Hero/inline images: prefer real URLs (Unsplash, screenshots) with image_credit + image_credit_url in frontmatter. AI-generated images get .img-credit paragraph in post body. Never hallucinate URLs."
   }
 }

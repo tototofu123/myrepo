@@ -1,5 +1,12 @@
 [
   {
+    "slug": "why-i-built-a-blog-that-lives-inside-github-issues",
+    "title": "Why I Built a Blog That Lives Inside GitHub Issues",
+    "date": "June 23, 2026",
+    "issue": "9",
+    "style": "dark"
+  },
+  {
     "slug": "the-automation-that-fixed-my-repos",
     "title": "The Automation That Fixed My Repos Before It Even Got Built",
     "date": "June 21, 2026",

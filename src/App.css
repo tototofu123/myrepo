@@ -193,11 +193,13 @@ a:hover { opacity: 0.75; }
   color: var(--text);
   isolation: isolate;
   transition: background var(--transition);
-  overflow: hidden; /* clip the image to card corners */
+  overflow: hidden;
 }
 
 /* Hero image thumbnail */
 .blog-card-img-wrap {
+  position: relative;
+  z-index: 1;
   width: 100%;
   aspect-ratio: 3 / 1;
   overflow: hidden;
@@ -214,8 +216,12 @@ a:hover { opacity: 0.75; }
   transform: scale(1.03);
 }
 
-/* Card text body (below image or standalone) */
+/* Card text body — must sit above glow pseudo-elements */
 .blog-card-body {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border-radius: var(--radius);
   padding: 16px 20px 20px;
 }
 
@@ -232,7 +238,7 @@ a:hover { opacity: 0.75; }
     transparent 180deg,
     transparent 360deg
   );
-  z-index: -1;
+  z-index: 0;
   animation: glow-spin 3s linear infinite;
   animation-play-state: paused;
   opacity: 0;
@@ -251,7 +257,7 @@ a:hover { opacity: 0.75; }
     transparent 180deg,
     transparent 360deg
   );
-  z-index: -2;
+  z-index: -1;
   filter: blur(6px);
   animation: glow-spin 3s linear infinite;
   animation-play-state: paused;
@@ -263,7 +269,7 @@ a:hover { opacity: 0.75; }
   animation-play-state: running;
   opacity: 1;
 }
-.blog-card:active {
+.blog-card:active .blog-card-body {
   background: #242424;
 }
 

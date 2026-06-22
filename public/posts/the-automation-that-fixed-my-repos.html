@@ -105,7 +105,6 @@
       color: var(--accent);
     }
 
-    /* ── Short read + fade ── */
     .short-read-wrap { position: relative; }
     .short-read {
       max-height: 8.5rem;
@@ -123,10 +122,6 @@
     }
     .short-read-fade.hidden { opacity: 0; }
 
-    /* ── Visual trigger ──
-       Pure CSS: three animated dots inside a pill container.
-       No text. On hover the dots brighten + pill gets a faint border.
-       JS removes the whole element after click (one-way). */
     .read-trigger {
       display: flex;
       align-items: center;
@@ -151,7 +146,6 @@
       border-color: var(--muted);
       background: rgba(255,255,255,0.04);
     }
-    /* Three dots */
     .read-trigger-dot {
       width: 5px;
       height: 5px;
@@ -162,14 +156,11 @@
     }
     .read-trigger-dot:nth-child(2) { animation-delay: 0.3s; }
     .read-trigger-dot:nth-child(3) { animation-delay: 0.6s; }
-    .read-trigger:hover .read-trigger-dot {
-      background: var(--muted);
-    }
+    .read-trigger:hover .read-trigger-dot { background: var(--muted); }
     @keyframes dot-breathe {
       0%, 100% { transform: translateY(0);   opacity: 0.5; }
       50%       { transform: translateY(-3px); opacity: 1; }
     }
-    /* Also add a subtle chevron below dots */
     .read-trigger-chevron {
       position: absolute;
       width: 12px;
@@ -194,8 +185,6 @@
     @media (prefers-reduced-motion: reduce) {
       .read-trigger-dot { animation: none; }
     }
-
-    /* Fade-out animation when trigger is removed */
     .read-trigger.dismissing {
       animation: trigger-out 0.35s ease forwards;
     }
@@ -203,7 +192,6 @@
       to { opacity: 0; transform: translateY(8px); pointer-events: none; }
     }
 
-    /* ── Long read ── */
     .long-read {
       overflow: hidden;
       max-height: 0;
@@ -211,10 +199,7 @@
       transition: max-height 0.55s ease, opacity 0.4s ease;
     }
     .long-read.open { max-height: 5000px; opacity: 1; }
-    .long-read-inner {
-      padding-top: 1.5rem;
-      margin-top: 0.5rem;
-    }
+    .long-read-inner { padding-top: 1.5rem; margin-top: 0.5rem; }
 
     .refs {
       margin-top: 3rem;
@@ -257,7 +242,7 @@
     <p class="hero-credit">Photo: <a href="https://unsplash.com/photos/VieM9BdZKFo" target="_blank" rel="noopener noreferrer">Gabriel Heinzer on Unsplash</a></p>
 
     <h1>The Automation That Fixed My Repos Before It Even Got Built</h1>
-    <p class="byline">Toto Lai &nbsp;&middot;&nbsp; June 22, 2026</p>
+    <p class="byline">Toto Lai &nbsp;&middot;&nbsp; June 21, 2026</p>
 
     <hr class="divider" id="mid-divider" />
 
@@ -270,7 +255,6 @@
       <div class="short-read-fade" id="short-fade"></div>
     </div>
 
-    <!-- Visual trigger: pure CSS pill + dots + chevron, no text -->
     <button class="read-trigger" id="trigger" aria-label="Read full article" aria-expanded="false" aria-controls="long-read">
       <div class="read-trigger-pill-wrap">
         <div class="read-trigger-pill">
@@ -324,12 +308,10 @@
     const divider  = document.getElementById('mid-divider');
 
     trigger.addEventListener('click', () => {
-      // Expand content
       region.classList.add('open');
       shortR.classList.add('expanded');
       fade.classList.add('hidden');
 
-      // Dismiss trigger + divider — fade out then remove from DOM
       trigger.classList.add('dismissing');
       divider.style.transition = 'opacity 0.3s ease';
       divider.style.opacity = '0';

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why I Built a Blog That Lives Inside GitHub Issues</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f0f;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      padding: 2rem 1rem 4rem;
+    }
+    .post-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+    }
+    .post-meta {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: #ffffff;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    h2, h3, h4 {
+      color: #ffffff;
+      margin: 2rem 0 0.75rem;
+      line-height: 1.3;
+    }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.15rem; }
+    p { color: #cccccc; margin-bottom: 1.2rem; max-width: 68ch; }
+    a { color: #a8ff78; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      background: #1c1c1c;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+    }
+    pre {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+    pre code { background: none; padding: 0; }
+    blockquote {
+      border-left: 3px solid #a8ff78;
+      padding: 0.5rem 0 0.5rem 1.2rem;
+      margin: 1.5rem 0;
+      color: #888;
+      font-style: italic;
+    }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 1.2rem; color: #cccccc; }
+    li { margin-bottom: 0.4rem; }
+    hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.8rem; border: 1px solid #222; text-align: left; }
+    th { background: #1c1c1c; color: #ffffff; }
+    .post-figure { margin: 1.5rem 0; }
+    .post-figure img { width: 100%; border-radius: 8px; border: 1px solid #222; }
+    .post-figure figcaption { font-size: 0.78rem; color: #888; margin-top: 0.4rem; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: #888;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #a8ff78; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .post-wrap { animation: fadeIn 0.5s ease both; }
+  </style>
+</head>
+<body>
+  <div class="post-wrap">
+    <a class="back-link" href="/#blog">&larr; Back to blog</a>
+    <h1>Why I Built a Blog That Lives Inside GitHub Issues</h1>
+    <p class="post-meta">June 23, 2026</p>
+
+    <p>I have one Framer student plan. Framer gives you one CMS collection on a free or student plan &mdash; one. That&rsquo;s a hard wall. You can have a beautiful site, great design, but the moment you want a second type of content (blog posts <em>and</em> project notes, say), you&rsquo;re blocked. I didn&rsquo;t want to pay just to write. And I definitely didn&rsquo;t want to manage a separate CMS tool.</p>
+    <p>So I went looking for a different way.</p>
+    <hr />
+    <p>The idea came from YouTube and Bilibili &mdash; a few videos about using GitHub Issues as a lightweight content editor. The pitch made sense immediately: Issues are already Markdown, already have labels and dates, already have a comment system, already live where my code lives. Why reach for a third-party CMS when the whole thing is right there?</p>
+    <p>The hard part wasn&rsquo;t the idea. It was the conversion: how do you get Markdown written in a GitHub Issue to become a styled HTML/CSS post on your actual site, automatically, without touching it again after you click Submit?</p>
+    <hr />
+    <p>That&rsquo;s where GitHub Actions came in &mdash; and where it got genuinely tricky.</p>
+    <p>The first version just grabbed the issue body and dumped it into a template. That worked. But the style wasn&rsquo;t mine. A blog post shouldn&rsquo;t look like a GitHub README. I wanted custom fonts, a dark theme, scroll animations, a short-read summary up top and a collapsible long-read below. Fine-tuning that conversion &mdash; the Python script that takes Markdown and outputs exactly the HTML structure I want &mdash; took more back-and-forth than I expected.</p>
+    <p>Agent-assisted fine-tuning helped a lot here. Describing the output I wanted and iterating on the generator script with an AI assistant in the loop was faster than hand-editing templates. The agent could see the rendered output, suggest CSS changes, and update the script in one pass.</p>
+    <hr />
+    <p>The queue was the other piece I hadn&rsquo;t thought about upfront.</p>
+    <p>Early on, if you labelled two issues on the same day, both published immediately. That looked messy &mdash; two posts landing at the same time with no rhythm. So I added a scheduling layer: one post per weekday at 12:00 HKT, with a second slot on weekends if there are three or more posts waiting. The oldest issue in the queue always goes first. The workflow checks the queue depth, decides how many slots today allows, picks the right issues, runs the generator, commits the files, and then comments on and closes each issue with the live URL.</p>
+    <p>Now writing a post is just: open an issue, write Markdown, add the <code>blog-post</code> label. The rest is automatic.</p>
+    <hr />
+    <p>It&rsquo;s not a CMS. It&rsquo;s better than a CMS, for this use case &mdash; everything version-controlled, no third-party accounts, no extra costs, and the editor is GitHub, which I&rsquo;m already in every day.</p>
+  </div>
+</body>
+</html>

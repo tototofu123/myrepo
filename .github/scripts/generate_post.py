@@ -145,8 +145,6 @@ for issue in issues:
     )
 
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-    filename = f'public/posts/{slug}.md'
-
     t = themes.get(style, themes['dark'])
 
     anim_names = [a.strip() for a in animations_raw.replace(',', ' ').split() if a.strip()]
@@ -155,12 +153,120 @@ for issue in issues:
     title_esc = html.escape(title)
     date_display = publish_date_display  # actual live date, not issue created_at
 
-    # Write the raw markdown file (for SPA inline rendering via Blog.tsx)
-    with open(filename, 'w', encoding='utf-8') as f:
+    # ── Write .md (for SPA inline rendering via Blog.tsx) ────────────────────
+    md_path = f'public/posts/{slug}.md'
+    with open(md_path, 'w', encoding='utf-8') as f:
         f.write(f'# {title}\n\n')
         f.write(f'*Published: {date_display}*\n\n')
         f.write(content_md)
-    print(f'Generated: {filename}')
+    print(f'Generated MD: {md_path}')
+
+    # ── Write .html (standalone rendered post) ────────────────────────────────
+    html_path = f'public/posts/{slug}.html'
+    html_doc = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title_esc}</title>
+  <style>
+    *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      background: {t['bg']};
+      color: {t['text']};
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      padding: 2rem 1rem 4rem;
+    }}
+    .post-wrap {{
+      max-width: 720px;
+      margin: 0 auto;
+      background: {t['surface']};
+      border: 1px solid {t['border']};
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+    }}
+    .post-meta {{
+      font-size: 0.8rem;
+      color: {t['muted']};
+      margin-bottom: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }}
+    h1 {{
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: {t['heading']};
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }}
+    h2, h3, h4 {{
+      color: {t['heading']};
+      margin: 2rem 0 0.75rem;
+      line-height: 1.3;
+    }}
+    h2 {{ font-size: 1.4rem; }}
+    h3 {{ font-size: 1.15rem; }}
+    p {{ color: {t['body_text']}; margin-bottom: 1.2rem; max-width: 68ch; }}
+    a {{ color: {t['accent']}; text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
+    code {{
+      background: {t['code_bg']};
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+    }}
+    pre {{
+      background: {t['pre_bg']};
+      border: 1px solid {t['border']};
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }}
+    pre code {{ background: none; padding: 0; }}
+    blockquote {{
+      border-left: 3px solid {t['accent']};
+      padding: 0.5rem 0 0.5rem 1.2rem;
+      margin: 1.5rem 0;
+      color: {t['muted']};
+      font-style: italic;
+    }}
+    ul, ol {{ padding-left: 1.5rem; margin-bottom: 1.2rem; color: {t['body_text']}; }}
+    li {{ margin-bottom: 0.4rem; }}
+    hr {{ border: none; border-top: 1px solid {t['border']}; margin: 2rem 0; }}
+    table {{ width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }}
+    th, td {{ padding: 0.6rem 0.8rem; border: 1px solid {t['border']}; text-align: left; }}
+    th {{ background: {t['code_bg']}; color: {t['heading']}; }}
+    .post-figure {{ margin: 1.5rem 0; }}
+    .post-figure img {{ width: 100%; border-radius: 8px; border: 1px solid {t['border']}; }}
+    .post-figure figcaption {{ font-size: 0.78rem; color: {t['muted']}; margin-top: 0.4rem; }}
+    .back-link {{
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: {t['muted']};
+      text-decoration: none;
+    }}
+    .back-link:hover {{ color: {t['accent']}; }}
+    {anim_css}
+  </style>
+</head>
+<body>
+  <div class="post-wrap">
+    <a class="back-link" href="/#blog">← Back to blog</a>
+    <h1>{title_esc}</h1>
+    <p class="post-meta">{date_display}</p>
+    {content_html}
+  </div>
+</body>
+</html>'''
+
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html_doc)
+    print(f'Generated HTML: {html_path}')
 
     # Update index.json — remove any existing entry for this slug, prepend new
     posts = [p for p in posts if p.get('slug') != slug]

@@ -100,7 +100,7 @@ a:hover { opacity: 0.75; }
 /* ── Glow card base ─────────────────────────────────────────────────── */
 /*
   ::before  = sharp 1px border layer  (z-index -1)
-  ::after   = tight blurred halo      (z-index -2, only 2px bleed + 6px blur)
+  ::after   = blurred halo            (z-index -2)
   Both invisible at rest, spin+fade-in on :hover.
 */
 
@@ -184,19 +184,25 @@ a:hover { opacity: 0.75; }
 }
 
 /* ── Blog card ───────────────────────────────────────────────────────── */
+/*
+  Blog card uses overflow:visible (unlike repo card which also does).
+  The image is clipped by .blog-card-img-wrap which has its own overflow:hidden.
+  Content (.blog-card-body) sits at z-index:1 to stay above the glow layers.
+  The ::before border and ::after halo are both free to bleed outside the card.
+*/
 .blog-card {
   position: relative;
   display: block;
-  background: var(--surface);
+  background: transparent; /* card bg is handled by children so glow can bleed out */
   border: none;
   border-radius: var(--radius);
   color: var(--text);
   isolation: isolate;
   transition: background var(--transition);
-  overflow: hidden;
+  overflow: visible; /* must be visible — overflow:hidden kills the halo */
 }
 
-/* Hero image thumbnail */
+/* Hero image thumbnail — clips the image to the card corners */
 .blog-card-img-wrap {
   position: relative;
   z-index: 1;
@@ -204,6 +210,7 @@ a:hover { opacity: 0.75; }
   aspect-ratio: 3 / 1;
   overflow: hidden;
   background: var(--surface-2);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .blog-card-img {
   width: 100%;
@@ -216,15 +223,16 @@ a:hover { opacity: 0.75; }
   transform: scale(1.03);
 }
 
-/* Card text body — must sit above glow pseudo-elements */
+/* Card text body — own background so glow doesn’t tint content */
 .blog-card-body {
   position: relative;
   z-index: 1;
   background: var(--surface);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   padding: 16px 20px 20px;
 }
 
+/* Sharp border ring — wider conic arc for blog cards */
 .blog-card::before {
   content: '';
   position: absolute;
@@ -233,9 +241,9 @@ a:hover { opacity: 0.75; }
   background: conic-gradient(
     from var(--glow-angle),
     transparent 0deg,
-    var(--glow-1) 60deg,
-    var(--glow-2) 120deg,
-    transparent 180deg,
+    var(--glow-1) 80deg,
+    var(--glow-2) 160deg,
+    transparent 220deg,
     transparent 360deg
   );
   z-index: 0;
@@ -244,31 +252,35 @@ a:hover { opacity: 0.75; }
   opacity: 0;
   transition: opacity 300ms ease;
 }
+
+/* Blurred halo — larger bleed + stronger blur for blog cards */
 .blog-card::after {
   content: '';
   position: absolute;
-  inset: -2px;
-  border-radius: calc(var(--radius) + 2px);
+  inset: -6px;
+  border-radius: calc(var(--radius) + 6px);
   background: conic-gradient(
     from var(--glow-angle),
     transparent 0deg,
-    var(--glow-1) 60deg,
-    var(--glow-2) 120deg,
-    transparent 180deg,
+    var(--glow-1) 80deg,
+    var(--glow-2) 160deg,
+    transparent 220deg,
     transparent 360deg
   );
   z-index: -1;
-  filter: blur(6px);
+  filter: blur(12px);
   animation: glow-spin 3s linear infinite;
   animation-play-state: paused;
   opacity: 0;
   transition: opacity 300ms ease;
 }
+
 .blog-card:hover::before,
 .blog-card:hover::after {
   animation-play-state: running;
   opacity: 1;
 }
+
 .blog-card:active .blog-card-body {
   background: #242424;
 }

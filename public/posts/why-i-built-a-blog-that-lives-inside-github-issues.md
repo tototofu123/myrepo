@@ -1,6 +1,6 @@
 # Why I Built a Blog That Lives Inside GitHub Issues
 
-*Published: June 23, 2026*
+*Published: June 22, 2026*
 
 I have one Framer student plan. Framer gives you one CMS collection on a free or student plan — one. That's a hard wall. You can have a beautiful site, great design, but the moment you want a second type of content (blog posts *and* project notes, say), you're blocked. I didn't want to pay just to write. And I definitely didn't want to manage a separate CMS tool.
 

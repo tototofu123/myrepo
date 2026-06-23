@@ -1,5 +1,12 @@
 [
   {
+    "slug": "giving-my-coding-agent-eyes-building-an-ocr-mcp-with-llama-cpp",
+    "title": "Giving My Coding Agent Eyes: Building an OCR MCP with llama.cpp",
+    "date": "June 23, 2026",
+    "issue": "10",
+    "style": "dark"
+  },
+  {
     "slug": "why-i-built-a-blog-that-lives-inside-github-issues",
     "title": "Why I Built a Blog That Lives Inside GitHub Issues",
     "date": "June 22, 2026",

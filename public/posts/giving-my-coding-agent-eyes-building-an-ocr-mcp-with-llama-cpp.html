@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giving My Coding Agent Eyes: Building an OCR MCP with llama.cpp</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f0f;
+      color: #e8e8e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      padding: 2rem 1rem 4rem;
+    }
+    .post-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+    }
+    .post-meta {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 2rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: #ffffff;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    h2, h3, h4 {
+      color: #ffffff;
+      margin: 2rem 0 0.75rem;
+      line-height: 1.3;
+    }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.15rem; }
+    p { color: #cccccc; margin-bottom: 1.2rem; max-width: 68ch; }
+    a { color: #a8ff78; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      background: #1c1c1c;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+    }
+    pre {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.2rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+    pre code { background: none; padding: 0; }
+    blockquote {
+      border-left: 3px solid #a8ff78;
+      padding: 0.5rem 0 0.5rem 1.2rem;
+      margin: 1.5rem 0;
+      color: #888;
+      font-style: italic;
+    }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 1.2rem; color: #cccccc; }
+    li { margin-bottom: 0.4rem; }
+    hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+    th, td { padding: 0.6rem 0.8rem; border: 1px solid #222; text-align: left; }
+    th { background: #1c1c1c; color: #ffffff; }
+    .post-figure { margin: 1.5rem 0; }
+    .post-figure img { width: 100%; border-radius: 8px; border: 1px solid #222; }
+    .post-figure figcaption { font-size: 0.78rem; color: #888; margin-top: 0.4rem; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: #888;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #a8ff78; }
+    
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.post-wrap { animation: fadeIn 0.5s ease both; }
+
+  </style>
+</head>
+<body>
+  <div class="post-wrap">
+    <a class="back-link" href="/#blog">← Back to blog</a>
+    <h1>Giving My Coding Agent Eyes: Building an OCR MCP with llama.cpp</h1>
+    <p class="post-meta">June 23, 2026</p>
+    <p>Free LLMs don't do vision. That's the short version of why this project exists.</p>
+<p>I use <a href="https://github.com/sst/opencode">opencode</a> — a terminal-based coding agent — as my main development environment. It's good. But the moment a task involved anything visual — a screenshot of a frontend bug, an error dialog I couldn't copy text from, an HTML structure I was inspecting in DevTools — the agent went blind. I couldn't paste an image into the conversation. The free models I was using had no vision endpoint.</p>
+<p>The fix I landed on: an MCP server that runs OCR locally via llama.cpp, and hands the text back to the agent.</p>
+<hr />
+<p>The setup is: you give the agent a file path. The agent calls the OCR MCP tool. The MCP spins up the right model via llama.cpp, runs inference, and returns the extracted text. The agent then continues reasoning with that text in context. No image is ever sent to an external API. Everything runs on local hardware.</p>
+<p>Because llama.cpp can run multiple inference processes in parallel, the MCP can invoke several models at once and return whichever completes first — or let the agent pick based on confidence.</p>
+<hr />
+<p>The model selection problem was the most interesting part.</p>
+<p>I looked at benchmarks on Hugging Face and tested several models myself across 50 random images. The models I evaluated were: <strong>LightOnOCR-2 (1B)</strong>, <strong>Chandra OCR v2 (2B)</strong>, <strong>Dots MOCR (1.8B)</strong>, <strong>Chandra v1 (8B)</strong>, <strong>olmOCR-2 (7B)</strong>, <strong>Infinity Parser (7B)</strong>, and <strong>PaddleOCR-VL (1.6B)</strong>.</p>
+<p>Each was scored on text similarity, character accuracy, word error rate, and hallucination ratio across the test set. The results were not what I expected.</p>
+<p>The benchmark winner on paper didn't win in practice — at least not for me. Several of the larger models hit RAM limits or timed out on my machine. Some models were highly specialised: PaddleOCR-VL and Chandra v2 handled Traditional Chinese well; olmOCR and Infinity Parser performed better on code and technical content (Python, Pascal, RSA key blocks). The 1B models were fast but missed detail on dense text.</p>
+<p>The honest result: no single model wins everything. The practical answer was a routing layer.</p>
+<hr />
+<p>The routing logic picks the right model based on what the agent says it's looking at:</p>
+<ul>
+<li><strong>Chinese/CJK text</strong> → PaddleOCR-VL or Chandra v2</li>
+<li><strong>Code / technical content</strong> → olmOCR-2 or Infinity Parser</li>
+<li><strong>General text / numbers / forms</strong> → LightOnOCR-2 (fast, low RAM)</li>
+<li><strong>High accuracy required</strong> → Chandra v1 or olmOCR-2 (slower, larger)</li>
+</ul>
+<p>The agent passes a <code>task_hint</code> alongside the image path. The MCP maps the hint to a ranked model list, runs the top candidate, and falls back down the list on timeout or failure.</p>
+<hr />
+<p>The practical outcome is what matters: I can now point the agent at a screenshot of a broken UI, a DevTools panel, or a scanned document, and it reads it. Not perfectly — dense layouts and handwriting still struggle — but well enough that the agent can continue working without needing me to manually transcribe anything.</p>
+<p>The code is at <a href="https://github.com/tototofu123/ocr-mcp">github.com/tototofu123/ocr-mcp</a>. The benchmark scripts and test set are included if you want to run your own evaluation.</p>
+  </div>
+</body>
+</html>

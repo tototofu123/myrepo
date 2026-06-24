@@ -1,5 +1,12 @@
 [
   {
+    "slug": "how-i-use-perplexity-github-together-as-a-dev-workflow",
+    "title": "How I Use Perplexity + GitHub Together as a Dev Workflow",
+    "date": "June 24, 2026",
+    "issue": "11",
+    "style": "dark"
+  },
+  {
     "slug": "giving-my-coding-agent-eyes-building-an-ocr-mcp-with-llama-cpp",
     "title": "Giving My Coding Agent Eyes: Building an OCR MCP with llama.cpp",
     "date": "June 23, 2026",

@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
   workflow_run:
-    workflows: ["New Blog Post from Issue"]
+    workflows:
+      - "New Blog Post from Issue"
+      - "Publish Queued Blog Posts"
     types: [completed]
 
 permissions:

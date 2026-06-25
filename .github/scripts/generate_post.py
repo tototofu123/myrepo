@@ -23,7 +23,6 @@ publish_date_iso = os.environ.get('PUBLISH_DATE_ISO', '')
 if issues_json:
     issues = json.loads(issues_json)
 else:
-    # Legacy single-issue fallback
     issues = [{
         'number': os.environ.get('ISSUE_NUMBER', '0'),
         'title':  os.environ.get('ISSUE_TITLE', 'Untitled'),
@@ -34,9 +33,18 @@ else:
     if not publish_date_iso:
         publish_date_iso = os.environ.get('ISSUE_DATE', '')[:10]
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Meta-section headers (the ONLY boundaries extract_section respects) ───────
+META_SECTIONS = {'CONTENT', 'STYLE', 'ANIMATIONS', 'IMAGES', 'TITLE'}
+
 def extract_section(body_text, section_name):
-    pattern = rf'##\s*{section_name}\s*\n(.*?)(?=\n##\s|$)'
+    """
+    Extract text between ## SECTION_NAME and the next meta-section header.
+    Only ## CONTENT / STYLE / ANIMATIONS / IMAGES / TITLE act as boundaries.
+    Any ## headings inside the post body pass through cleanly.
+    """
+    # Build alternation of meta section names for the lookahead
+    meta_pattern = '|'.join(META_SECTIONS)
+    pattern = rf'##\s*{re.escape(section_name)}\s*\n(.*?)(?=\n##\s*(?:{meta_pattern})\s*\n|$)'
     match = re.search(pattern, body_text, re.IGNORECASE | re.DOTALL)
     return match.group(1).strip() if match else ''
 
@@ -106,14 +114,14 @@ for issue in issues:
     has_sections = bool(re.search(r'##\s*(CONTENT|TITLE)', body, re.IGNORECASE))
 
     if has_sections:
-        content_md   = extract_section(body, 'CONTENT') or body
-        style        = extract_section(body, 'STYLE').lower() or 'dark'
-        images_raw   = extract_section(body, 'IMAGES')
+        content_md     = extract_section(body, 'CONTENT') or body
+        style          = extract_section(body, 'STYLE').lower() or 'dark'
+        images_raw     = extract_section(body, 'IMAGES')
         animations_raw = extract_section(body, 'ANIMATIONS').lower()
     else:
-        content_md   = body
-        style        = 'dark'
-        images_raw   = ''
+        content_md     = body
+        style          = 'dark'
+        images_raw     = ''
         animations_raw = 'fade'
 
     # Images
@@ -139,10 +147,19 @@ for issue in issues:
         else:
             content_md += f'\n\n{img_html}'
 
-    content_html = markdown.markdown(
-        content_md,
+    # Split content into intro (first paragraph) and rest for show-more
+    paragraphs = content_md.strip().split('\n\n')
+    intro_md = paragraphs[0] if paragraphs else content_md
+    rest_md  = '\n\n'.join(paragraphs[1:]) if len(paragraphs) > 1 else ''
+
+    intro_html = markdown.markdown(
+        intro_md,
         extensions=['fenced_code', 'tables', 'nl2br', 'attr_list']
     )
+    rest_html = markdown.markdown(
+        rest_md,
+        extensions=['fenced_code', 'tables', 'nl2br', 'attr_list']
+    ) if rest_md else ''
 
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
     t = themes.get(style, themes['dark'])
@@ -150,18 +167,49 @@ for issue in issues:
     anim_names = [a.strip() for a in animations_raw.replace(',', ' ').split() if a.strip()]
     anim_css   = '\n'.join(anim_presets.get(a, '') for a in anim_names) or anim_presets['fade']
 
-    title_esc = html.escape(title)
-    date_display = publish_date_display  # actual live date, not issue created_at
+    title_esc    = html.escape(title)
+    date_display = publish_date_display
 
-    # ── Write .md (for SPA inline rendering via Blog.tsx) ────────────────────
+    show_more_block = ''
+    if rest_html:
+        show_more_block = f'''
+    <div class="expand-wrap" id="expand-wrap">
+      <button class="show-more-btn" id="show-more-btn" onclick="toggleExpand()" aria-expanded="false">
+        <span class="dots"><span>.</span><span>.</span><span>.</span></span>
+        <span class="chevron">&#8964;</span>
+      </button>
+      <div class="expandable" id="expandable" hidden>
+        {rest_html}
+      </div>
+    </div>
+    <script>
+      function toggleExpand() {{
+        var btn = document.getElementById('show-more-btn');
+        var body = document.getElementById('expandable');
+        var expanded = btn.getAttribute('aria-expanded') === 'true';
+        if (expanded) {{
+          body.hidden = true;
+          btn.setAttribute('aria-expanded', 'false');
+          btn.querySelector('.chevron').style.transform = 'rotate(0deg)';
+        }} else {{
+          body.hidden = false;
+          btn.setAttribute('aria-expanded', 'true');
+          btn.querySelector('.chevron').style.transform = 'rotate(180deg)';
+        }}
+      }}
+    </script>
+'''
+
+    # ── Write .md ────────────────────────────────────────────────────────────
     md_path = f'public/posts/{slug}.md'
+    full_content_md = content_md  # full, unsplit version for the .md file
     with open(md_path, 'w', encoding='utf-8') as f:
         f.write(f'# {title}\n\n')
         f.write(f'*Published: {date_display}*\n\n')
-        f.write(content_md)
+        f.write(full_content_md)
     print(f'Generated MD: {md_path}')
 
-    # ── Write .html (standalone rendered post) ────────────────────────────────
+    # ── Write .html ──────────────────────────────────────────────────────────
     html_path = f'public/posts/{slug}.html'
     html_doc = f'''<!DOCTYPE html>
 <html lang="en">
@@ -184,7 +232,7 @@ for issue in issues:
       margin: 0 auto;
       background: {t['surface']};
       border: 1px solid {t['border']};
-      border-radius: 12px;
+      border-radius: 4px;
       padding: 2.5rem 2rem;
     }}
     .post-meta {{
@@ -221,14 +269,14 @@ for issue in issues:
     pre {{
       background: {t['pre_bg']};
       border: 1px solid {t['border']};
-      border-radius: 8px;
+      border-radius: 4px;
       padding: 1.2rem;
       overflow-x: auto;
       margin: 1.5rem 0;
     }}
     pre code {{ background: none; padding: 0; }}
     blockquote {{
-      border-left: 3px solid {t['accent']};
+      border-left: 2px solid {t['accent']};
       padding: 0.5rem 0 0.5rem 1.2rem;
       margin: 1.5rem 0;
       color: {t['muted']};
@@ -241,7 +289,7 @@ for issue in issues:
     th, td {{ padding: 0.6rem 0.8rem; border: 1px solid {t['border']}; text-align: left; }}
     th {{ background: {t['code_bg']}; color: {t['heading']}; }}
     .post-figure {{ margin: 1.5rem 0; }}
-    .post-figure img {{ width: 100%; border-radius: 8px; border: 1px solid {t['border']}; }}
+    .post-figure img {{ width: 100%; border-radius: 4px; border: 1px solid {t['border']}; }}
     .post-figure figcaption {{ font-size: 0.78rem; color: {t['muted']}; margin-top: 0.4rem; }}
     .back-link {{
       display: inline-block;
@@ -251,6 +299,40 @@ for issue in issues:
       text-decoration: none;
     }}
     .back-link:hover {{ color: {t['accent']}; }}
+    .show-more-btn {{
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: none;
+      border: 1px solid {t['border']};
+      border-radius: 4px;
+      color: {t['muted']};
+      font-size: 0.9rem;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      margin: 1.5rem 0;
+      transition: color 0.2s, border-color 0.2s;
+    }}
+    .show-more-btn:hover {{ color: {t['accent']}; border-color: {t['accent']}; }}
+    .dots span {{
+      animation: bounce 1.2s infinite;
+      display: inline-block;
+    }}
+    .dots span:nth-child(2) {{ animation-delay: 0.15s; }}
+    .dots span:nth-child(3) {{ animation-delay: 0.3s; }}
+    @keyframes bounce {{
+      0%, 80%, 100% {{ transform: translateY(0); }}
+      40% {{ transform: translateY(-4px); }}
+    }}
+    .chevron {{
+      display: inline-block;
+      transition: transform 0.3s ease;
+      font-size: 1.1rem;
+      line-height: 1;
+    }}
+    .expandable {{
+      animation: fadeIn 0.35s ease both;
+    }}
     {anim_css}
   </style>
 </head>
@@ -259,7 +341,8 @@ for issue in issues:
     <a class="back-link" href="/#blog">← Back to blog</a>
     <h1>{title_esc}</h1>
     <p class="post-meta">{date_display}</p>
-    {content_html}
+    {intro_html}
+    {show_more_block}
   </div>
 </body>
 </html>'''
@@ -268,18 +351,17 @@ for issue in issues:
         f.write(html_doc)
     print(f'Generated HTML: {html_path}')
 
-    # Update index.json — remove any existing entry for this slug, prepend new
     posts = [p for p in posts if p.get('slug') != slug]
-    posts.insert(0, {
+    posts.insert(0, {{
         'slug':  slug,
         'title': title,
         'date':  date_display,
         'issue': number,
         'style': style,
-    })
+    }})
     print(f'Index entry added for: {slug}')
 
 # ── Write updated index ───────────────────────────────────────────────────────
 with open(index_path, 'w', encoding='utf-8') as f:
     json.dump(posts, f, indent=2, ensure_ascii=False)
-print(f'Index written: {len(posts)} total posts')
+print(f'Index written: {{len(posts)}} total posts')

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How I Use Perplexity + GitHub Together as a Dev Workflow</title>
+  <title>How I Use Perplexity and GitHub Together as a Dev Workflow</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -19,86 +19,111 @@
       margin: 0 auto;
       background: #161616;
       border: 1px solid #222;
-      border-radius: 12px;
+      border-radius: 4px;
       padding: 2.5rem 2rem;
+      animation: fadeIn 0.5s ease both;
     }
-    .post-meta {
-      font-size: 0.8rem;
-      color: #888;
-      margin-bottom: 2rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    h1 {
-      font-size: clamp(1.6rem, 4vw, 2.4rem);
-      color: #ffffff;
-      line-height: 1.2;
-      margin-bottom: 0.5rem;
-      font-weight: 700;
-    }
-    h2, h3, h4 {
-      color: #ffffff;
-      margin: 2rem 0 0.75rem;
-      line-height: 1.3;
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .post-meta { font-size: 0.8rem; color: #888; margin-bottom: 2rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); color: #fff; line-height: 1.2; margin-bottom: 0.5rem; font-weight: 700; }
+    h2, h3 { color: #fff; margin: 2rem 0 0.75rem; line-height: 1.3; }
     h2 { font-size: 1.4rem; }
     h3 { font-size: 1.15rem; }
-    p { color: #cccccc; margin-bottom: 1.2rem; max-width: 68ch; }
+    p { color: #ccc; margin-bottom: 1.2rem; max-width: 68ch; }
     a { color: #a8ff78; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    code {
-      background: #1c1c1c;
-      padding: 0.15em 0.4em;
-      border-radius: 4px;
-      font-size: 0.88em;
-      font-family: 'Fira Code', 'Cascadia Code', monospace;
-    }
-    pre {
-      background: #141414;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 1.2rem;
-      overflow-x: auto;
-      margin: 1.5rem 0;
-    }
-    pre code { background: none; padding: 0; }
-    blockquote {
-      border-left: 3px solid #a8ff78;
-      padding: 0.5rem 0 0.5rem 1.2rem;
-      margin: 1.5rem 0;
-      color: #888;
-      font-style: italic;
-    }
-    ul, ol { padding-left: 1.5rem; margin-bottom: 1.2rem; color: #cccccc; }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 1.2rem; color: #ccc; }
     li { margin-bottom: 0.4rem; }
     hr { border: none; border-top: 1px solid #222; margin: 2rem 0; }
     table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
     th, td { padding: 0.6rem 0.8rem; border: 1px solid #222; text-align: left; }
-    th { background: #1c1c1c; color: #ffffff; }
-    .post-figure { margin: 1.5rem 0; }
-    .post-figure img { width: 100%; border-radius: 8px; border: 1px solid #222; }
-    .post-figure figcaption { font-size: 0.78rem; color: #888; margin-top: 0.4rem; }
-    .back-link {
-      display: inline-block;
-      margin-bottom: 1.5rem;
-      font-size: 0.85rem;
-      color: #888;
-      text-decoration: none;
-    }
+    th { background: #1c1c1c; color: #fff; }
+    .back-link { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: #888; text-decoration: none; }
     .back-link:hover { color: #a8ff78; }
-    
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-.post-wrap { animation: fadeIn 0.5s ease both; }
-
+    .show-more-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: none; border: 1px solid #222; border-radius: 4px;
+      color: #888; font-size: 0.9rem; padding: 0.4rem 1rem;
+      cursor: pointer; margin: 1.5rem 0;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .show-more-btn:hover { color: #a8ff78; border-color: #a8ff78; }
+    .dots span { animation: bounce 1.2s infinite; display: inline-block; }
+    .dots span:nth-child(2) { animation-delay: 0.15s; }
+    .dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-4px); } }
+    .chevron { display: inline-block; transition: transform 0.3s ease; font-size: 1.1rem; line-height: 1; }
+    .expandable { animation: fadeIn 0.35s ease both; }
   </style>
 </head>
 <body>
   <div class="post-wrap">
     <a class="back-link" href="/#blog">← Back to blog</a>
-    <h1>How I Use Perplexity + GitHub Together as a Dev Workflow</h1>
-    <p class="post-meta">June 24, 2026</p>
-    <p>This is a workflow guide, not a product review. It's about how Perplexity and GitHub ended up working together in my day-to-day development — what each tool is actually good for, where they overlap, and how the combination covers gaps that neither handles well alone.</p>
-<hr />
+    <h1>How I Use Perplexity and GitHub Together as a Dev Workflow</h1>
+    <p class="post-meta">June 22, 2026</p>
+
+    <p>This is not a tools review. It is a description of how two tools ended up splitting a job that used to be one messy thing.</p>
+
+    <button class="show-more-btn" id="show-more-btn" onclick="toggleExpand()" aria-expanded="false">
+      <span class="dots"><span>.</span><span>.</span><span>.</span></span>
+      <span class="chevron">&#8964;</span>
+    </button>
+
+    <div class="expandable" id="expandable" hidden>
+      <h2>Where it started</h2>
+      <p>The original use case was STM32 firmware. Large codebases, lots of context, questions that needed answers faster than a documentation search could provide. Perplexity handled that role well. It reads code, answers questions about it, and does not require a specific IDE or environment to be useful.</p>
+      <p>From there the workflow expanded. GitHub Copilot came in for the implementation side, specifically the coding agent that can open pull requests from a prompt. Perplexity stayed on the research and review side. The two tools ended up doing different things without much overlap.</p>
+
+      <h2>How the split actually works</h2>
+      <p>Perplexity is where questions go. It reads the repo.lai.codes codebase, explains what workflows do, catches issues in logic, and answers questions about structure without needing local access to the files. It also handles writing: post drafts, README updates, anything that benefits from iteration in conversation.</p>
+      <p>GitHub Copilot is where implementation goes. The coding agent takes a problem statement and opens a pull request. The initial myrepo showcase site was built this way. The blog pipeline scaffolding was also started this way. The agent writes the code, opens the PR, and the review happens after.</p>
+      <p>The line between them is roughly: if it requires generating or modifying files in the repo, it goes to Copilot. If it requires reading, understanding, explaining, or drafting, it goes to Perplexity.</p>
+
+      <h2>The credit wall problem</h2>
+      <p>The reason the split matters is credits. GitHub Copilot's coding agent costs premium request credits. Using it for every small question or every draft iteration would burn through the allowance fast. Perplexity handles the tasks that do not need code generation at no per-request cost, which means Copilot credits go toward the tasks that actually require them.</p>
+      <p>This is not a budget hack. It is closer to the tools being genuinely better suited to different parts of the work.</p>
+
+      <h2>What this repo is</h2>
+      <p>The myrepo codebase is a Vite and React single page app deployed on GitHub Pages at repo.lai.codes. It has three main parts now: the project showcase that pulls live from the GitHub API, the blog section that reads from a generated index.json, and the GitHub Actions pipeline that converts issues into published posts.</p>
+      <p>All three parts were built in stages using the same workflow described above. The showcase came from a Copilot PR. The blog pipeline was built in conversation and pushed directly. The posts themselves are written as GitHub issues and converted to HTML by Actions on a schedule.</p>
+
+      <h2>Tool split reference</h2>
+      <table>
+        <thead><tr><th>Task</th><th>Tool</th></tr></thead>
+        <tbody>
+          <tr><td>Read and explain code</td><td>Perplexity</td></tr>
+          <tr><td>Answer questions about structure</td><td>Perplexity</td></tr>
+          <tr><td>Write and iterate on drafts</td><td>Perplexity</td></tr>
+          <tr><td>Generate files or open PRs</td><td>Copilot agent</td></tr>
+          <tr><td>Fix specific bugs in the repo</td><td>Copilot agent</td></tr>
+          <tr><td>Push small updates directly</td><td>Perplexity via MCP</td></tr>
+        </tbody>
+      </table>
+
+      <hr />
+      <h3>References</h3>
+      <ul>
+        <li><a href="https://repo.lai.codes" target="_blank" rel="noopener">repo.lai.codes</a></li>
+        <li><a href="https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent-to-work-on-tasks/about-assigning-tasks-to-copilot" target="_blank" rel="noopener">GitHub Copilot coding agent docs</a></li>
+      </ul>
+    </div>
   </div>
+
+  <script>
+    function toggleExpand() {
+      var btn = document.getElementById('show-more-btn');
+      var body = document.getElementById('expandable');
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      if (expanded) {
+        body.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+        btn.querySelector('.chevron').style.transform = 'rotate(0deg)';
+      } else {
+        body.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        btn.querySelector('.chevron').style.transform = 'rotate(180deg)';
+      }
+    }
+  </script>
 </body>
 </html>
